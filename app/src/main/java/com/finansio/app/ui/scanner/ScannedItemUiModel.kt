@@ -1,0 +1,16 @@
+package com.finansio.app.ui.scanner
+
+import com.finansio.app.data.local.entity.TransactionType
+import java.util.UUID
+
+data class ScannedItemUiModel(
+    val id: String = UUID.randomUUID().toString(),
+    val name: String,
+    val price: Long,
+    val quantity: Int = 1,
+    val categoryId: Int? = null,
+    val categoryName: String,
+    val note: String? = null,
+    val date: Long,
+    val type: TransactionType = TransactionType.EXPENSE
+)
