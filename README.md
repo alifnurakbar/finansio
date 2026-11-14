@@ -84,3 +84,4 @@ Ini juga sudah diselesaikan pada *starter code* dengan menyesuaikan *Label Prope
 
 ## 🎓 Selamat Belajar!
 Jangan ragu untuk mengeksplorasi kode-kode yang ada di dalam *package* `com.finansio.app.ui` dan `com.finansio.app.data` sebelum sesi *workshop* dimulai. *Happy coding!*
+# finansio

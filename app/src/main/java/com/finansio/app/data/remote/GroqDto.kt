@@ -7,7 +7,8 @@ data class GroqChatRequest(
     @SerializedName("messages") val messages: List<GroqMessage>,
     @SerializedName("response_format") val responseFormat: GroqResponseFormat? = null,
     @SerializedName("temperature") val temperature: Double? = 0.2,
-    @SerializedName("max_tokens") val maxTokens: Int? = 1024
+    // gpt-oss adalah reasoning model: token "berpikir" ikut dihitung, jadi beri ruang lebih
+    @SerializedName("max_tokens") val maxTokens: Int? = 4096
 )
 
 data class GroqMessage(

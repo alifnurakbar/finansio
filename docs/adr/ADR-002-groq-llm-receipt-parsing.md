@@ -13,3 +13,6 @@ Menggunakan LLM via Groq API dengan model `llama-3.1-70b-versatile` dan mode JSO
 - Groq menawarkan latency sangat rendah (LPU) yang ideal untuk use-case mobile.
 - Llama 3.1 70B sangat handal dalam zero-shot extraction dan format JSON constraint.
 - Daripada rule-based parsing, AI approach jauh lebih fleksibel untuk berbagai macam struk di Indonesia.
+
+## Pembaruan (2026-11-07)
+Model Llama 3.x sudah dihentikan di Groq dan API mengembalikan HTTP 404 `model_not_found`. Model diganti ke `openai/gpt-oss-120b`, yang masih mendukung mode JSON dan memberi hasil paling akurat di antara model yang tersedia. Karena ini reasoning model, `max_tokens` dinaikkan ke 4096 supaya jawabannya tidak terpotong.

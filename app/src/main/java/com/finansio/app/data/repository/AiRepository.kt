@@ -159,7 +159,7 @@ class AiRepository(private val apiService: GroqApiService) {
                     ),
                     responseFormat = null,
                     temperature = 0.7,
-                    maxTokens = 1500
+                    maxTokens = 4096
                 )
 
                 val response = apiService.createChatCompletion(request)
