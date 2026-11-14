@@ -58,6 +58,31 @@ class StatisticsViewModel(
         }.map { it ?: 0L }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
+    /** Income & outcome 6 bulan terakhir sampai bulan yang dipilih (untuk grafik tren). */
+    val monthlyTrend: StateFlow<List<PeriodTotal>> = selectedMonth.flatMapLatest { month ->
+        val firstCal = java.util.Calendar.getInstance(DateUtils.localeID).apply {
+            set(month.year, month.month, 1)
+            add(java.util.Calendar.MONTH, -5)
+        }
+        val start = DateUtils.getStartOfMonth(firstCal.get(java.util.Calendar.YEAR), firstCal.get(java.util.Calendar.MONTH))
+        val end = DateUtils.getEndOfMonth(month.year, month.month)
+        transactionRepository.getByDateRange(start, end).map { transactions ->
+            (0 until 6).map { i ->
+                val cal = (firstCal.clone() as java.util.Calendar).apply { add(java.util.Calendar.MONTH, i) }
+                val y = cal.get(java.util.Calendar.YEAR)
+                val m = cal.get(java.util.Calendar.MONTH)
+                val mStart = DateUtils.getStartOfMonth(y, m)
+                val mEnd = DateUtils.getEndOfMonth(y, m)
+                val inMonth = transactions.filter { it.date in mStart..mEnd }
+                PeriodTotal(
+                    label = java.text.SimpleDateFormat("MMM", DateUtils.localeID).format(cal.time),
+                    income = inMonth.filter { it.type == TransactionType.INCOME }.sumOf { it.amount },
+                    expense = inMonth.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+                )
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val monthlyIncome: StateFlow<Long> = monthlyTotal(TransactionType.INCOME)
     val monthlyExpense: StateFlow<Long> = monthlyTotal(TransactionType.EXPENSE)
 
@@ -210,3 +235,6 @@ class StatisticsViewModel(
         return dailyTotals.toList()
     }
 }
+
+/** Total pemasukan & pengeluaran untuk satu periode (hari atau bulan) pada grafik kolom. */
+data class PeriodTotal(val label: String, val income: Long, val expense: Long)
