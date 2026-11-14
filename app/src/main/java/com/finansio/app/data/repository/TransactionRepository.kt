@@ -16,6 +16,7 @@ class TransactionRepository(private val transactionDao: TransactionDao) {
     suspend fun getById(id: Int): TransactionEntity? = withContext(Dispatchers.IO) { transactionDao.getById(id) }
     fun getTotalByTypeAndDateRange(type: TransactionType, start: Long, end: Long): Flow<Long?> = transactionDao.getTotalByTypeAndDateRange(type, start, end)
     fun getExpenseByCategoryInRange(start: Long, end: Long): Flow<List<CategorySummary>> = transactionDao.getExpenseByCategoryInRange(TransactionType.EXPENSE, start, end)
+    fun getTotalsByCategoryInRange(type: TransactionType, start: Long, end: Long): Flow<List<CategorySummary>> = transactionDao.getExpenseByCategoryInRange(type, start, end)
     suspend fun insert(transaction: TransactionEntity) = withContext(Dispatchers.IO) { transactionDao.insert(transaction) }
     suspend fun update(transaction: TransactionEntity) = withContext(Dispatchers.IO) { transactionDao.update(transaction) }
     suspend fun delete(transaction: TransactionEntity) = withContext(Dispatchers.IO) { transactionDao.delete(transaction) }

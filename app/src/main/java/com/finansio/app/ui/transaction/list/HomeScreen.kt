@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -41,7 +43,8 @@ fun HomeScreen(
     userName: String = "",
     budgetAlerts: List<BudgetAlert> = emptyList(),
     onDismissAlert: (BudgetAlert) -> Unit = {},
-    onAlertClick: () -> Unit = {}
+    onAlertClick: () -> Unit = {},
+    onOpenChat: () -> Unit = {}
 ) {
     val transactions by viewModel.transactions.collectAsState()
     val balance by viewModel.balance.collectAsState()
@@ -51,11 +54,24 @@ fun HomeScreen(
     val monthlyExpenseData by viewModel.monthlyExpenseData.collectAsState()
     val selectedMonth by monthFilterViewModel.selectedMonth.collectAsState()
 
-    Scaffold() { padding ->
+    Scaffold(
+        floatingActionButton = {
+            // Tombol Chat Asisten AI
+            ExtendedFloatingActionButton(
+                onClick = onOpenChat,
+                icon = { Icon(androidx.compose.material.icons.Icons.Rounded.AutoAwesome, contentDescription = null) },
+                text = { Text("Tanya AI", fontWeight = FontWeight.Bold) },
+                containerColor = com.finansio.app.ui.theme.Lavender,
+                contentColor = com.finansio.app.ui.theme.Background,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues = padding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
             Text(
@@ -160,13 +176,13 @@ fun HomeScreen(
             if (transactions.isEmpty()) {
                 EmptyStateView("Belum ada catatan bulan ini â yuk mulai catat")
             } else {
-                LazyColumn {
-                    items(transactions) { tx ->
+                transactions.forEach { tx ->
                         Box(modifier = Modifier.clickable { onNavigateToTransaction(tx.id) }) {
                             TransactionRow(transaction = tx, categoryColorHex = null)
                         }
-                    }
                 }
+                // Ruang supaya transaksi terakhir tidak tertutup tombol Tanya AI
+                Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }

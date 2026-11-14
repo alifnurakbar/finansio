@@ -18,6 +18,11 @@ import kotlinx.coroutines.withContext
 class AiRepository(private val apiService: GroqApiService) {
     private val gson = Gson()
 
+    private companion object {
+        // Jumlah pesan terakhir yang ikut dikirim sebagai konteks percakapan
+        const val MAX_CHAT_TURNS = 10
+    }
+
     suspend fun parseReceiptText(
         ocrText: String,
         categories: List<CategoryEntity>
@@ -133,6 +138,47 @@ class AiRepository(private val apiService: GroqApiService) {
             Result.failure(Exception(friendlyAiError(e), e))
         }
     }
+
+    /**
+     * Chat Asisten Keuangan. [history] berisi percakapan sebelumnya (role "user"/"assistant"),
+     * [financeContext] berisi ringkasan data keuangan pengguna dari FinanceContextBuilder.
+     */
+    suspend fun chat(history: List<GroqMessage>, financeContext: String): Result<String> =
+        withContext(Dispatchers.IO) {
+            try {
+                val systemPrompt = """
+                    Kamu adalah "Finansio AI", asisten keuangan pribadi di aplikasi Finansio.
+                    Jawab pertanyaan pengguna HANYA berdasarkan data keuangan di bawah ini.
+
+                    Aturan:
+                    - Bahasa Indonesia yang santai, hangat, dan mudah dipahami.
+                    - Ringkas: maksimal sekitar 120 kata, kecuali pengguna minta penjelasan panjang.
+                    - Sebut angka konkret dari data (format Rp dengan titik ribuan, misalnya Rp1.250.000).
+                    - Boleh memakai daftar dengan tanda "- " dan **teks tebal** untuk poin penting.
+                      Jangan memakai tabel, judul markdown (#), atau blok kode.
+                    - Jika data tidak cukup untuk menjawab, katakan terus terang dan sarankan pengguna mencatat transaksinya.
+                    - Jika pertanyaan di luar topik keuangan pribadi, tolak dengan sopan dan arahkan kembali ke keuangan.
+                    - Jangan mengarang transaksi atau angka yang tidak ada di data.
+
+                    DATA KEUANGAN PENGGUNA:
+                    $financeContext
+                """.trimIndent()
+
+                val request = GroqChatRequest(
+                    messages = listOf(GroqMessage(role = "system", content = systemPrompt)) +
+                        history.takeLast(MAX_CHAT_TURNS),
+                    responseFormat = null,
+                    temperature = 0.5,
+                    maxTokens = 2048
+                )
+                val content = apiService.createChatCompletion(request)
+                    .choices.firstOrNull()?.message?.content?.trim()
+                if (content.isNullOrBlank()) Result.failure(Exception("AI tidak memberikan jawaban. Coba tanyakan lagi."))
+                else Result.success(content)
+            } catch (e: Exception) {
+                Result.failure(Exception(friendlyAiError(e), e))
+            }
+        }
 
     /** Saran singkat saat pengeluaran sebuah kategori mendekati/melewati anggarannya. */
     suspend fun generateBudgetAdvice(

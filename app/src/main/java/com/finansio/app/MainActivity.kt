@@ -20,6 +20,8 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PieChart
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Alignment
@@ -220,9 +222,11 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-                ) { _ ->
+                ) { innerPadding ->
+                    // Hanya padding bawah (menu bawah) yang dipakai; tiap layar mengatur padding atasnya sendiri
+                    val bottomPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding())
                     Surface(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().padding(bottomPadding).consumeWindowInsets(bottomPadding),
                         color = MaterialTheme.colorScheme.background
                     ) {
                         AppNavGraph(
@@ -236,7 +240,8 @@ class MainActivity : ComponentActivity() {
                             monthFilterViewModel = monthFilterViewModel,
                             budgetViewModel = budgetViewModel,
                             settingsRepository = app.settingsRepository,
-                            budgetAlertManager = app.budgetAlertManager
+                            budgetAlertManager = app.budgetAlertManager,
+                            viewModelFactory = factory
                         )
                     }
                 }

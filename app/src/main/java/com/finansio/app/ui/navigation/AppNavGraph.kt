@@ -27,6 +27,10 @@ import com.finansio.app.data.settings.SettingsRepository
 import com.finansio.app.ui.budget.BudgetScreen
 import com.finansio.app.ui.budget.BudgetViewModel
 import com.finansio.app.ui.profile.ProfileScreen
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.finansio.app.ui.chat.ChatScreen
+import com.finansio.app.ui.chat.ChatViewModel
 
 @Composable
 fun AppNavGraph(
@@ -40,7 +44,8 @@ fun AppNavGraph(
     monthFilterViewModel: MonthFilterViewModel,
     budgetViewModel: BudgetViewModel,
     settingsRepository: SettingsRepository,
-    budgetAlertManager: BudgetAlertManager
+    budgetAlertManager: BudgetAlertManager,
+    viewModelFactory: ViewModelProvider.Factory
 ) {
     NavHost(
         navController = navController,
@@ -61,7 +66,8 @@ fun AppNavGraph(
                 userName = userName,
                 budgetAlerts = budgetAlerts,
                 onDismissAlert = budgetAlertManager::dismiss,
-                onAlertClick = { navController.navigateToTab(Screen.Budget.route) }
+                onAlertClick = { navController.navigateToTab(Screen.Budget.route) },
+                onOpenChat = { navController.navigate(Screen.Chat.route) }
             )
         }
         composable(Screen.TransactionHistory.route) {
@@ -94,6 +100,11 @@ fun AppNavGraph(
                 viewModel = transactionFormViewModel,
                 onBack = { navController.popBackStack() }
             )
+        }
+        composable(Screen.Chat.route) {
+            // ViewModel terikat ke halaman ini: riwayat chat hilang saat halaman ditutup
+            val chatViewModel: ChatViewModel = viewModel(factory = viewModelFactory)
+            ChatScreen(viewModel = chatViewModel, onBack = { navController.popBackStack() })
         }
         composable(Screen.Budget.route) {
             BudgetScreen(viewModel = budgetViewModel, monthFilterViewModel = monthFilterViewModel)

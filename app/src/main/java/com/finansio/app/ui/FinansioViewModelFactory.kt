@@ -42,6 +42,12 @@ class FinansioViewModelFactory(
             modelClass.isAssignableFrom(com.finansio.app.ui.budget.BudgetViewModel::class.java) -> {
                 com.finansio.app.ui.budget.BudgetViewModel(budgetRepository, categoryRepository, monthFilterViewModel) as T
             }
+            modelClass.isAssignableFrom(com.finansio.app.ui.chat.ChatViewModel::class.java) -> {
+                com.finansio.app.ui.chat.ChatViewModel(
+                    aiRepository,
+                    com.finansio.app.data.chat.FinanceContextBuilder(transactionRepository, budgetRepository)
+                ) as T
+            }
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }

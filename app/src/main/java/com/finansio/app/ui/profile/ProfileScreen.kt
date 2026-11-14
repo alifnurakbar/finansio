@@ -49,7 +49,7 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, bottom = 120.dp)
+                .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
         ) {
             FinansioTopBar(title = "Profil")
 
