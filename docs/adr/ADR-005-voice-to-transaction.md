@@ -16,7 +16,7 @@ Kami memilih menggunakan **System Intent** (`RecognizerIntent.ACTION_RECOGNIZE_S
 - Tidak perlu mengelola lifecycle `SpeechRecognizer` secara manual (create, destroy, error recovery).
 - Google menangani UI feedback (waveform, progress) secara otomatis.
 - Mendukung locale `id-ID` (Bahasa Indonesia) dengan konfigurasi `EXTRA_LANGUAGE`.
-- Tradeoff: tidak bisa custom UI waveform seperti di DESIGN.md section 4.6, tapi simplicity lebih penting untuk workshop.
+- Tradeoff: tidak bisa custom UI waveform seperti di [DESIGN.md](../referensi-awal/DESIGN.md) section 4.6, tapi simplicity lebih penting untuk workshop.
 
 ### 2. Text Parsing: Groq LLM (reuse infrastruktur existing)
 Setelah mendapat teks dari SpeechRecognizer, teks dikirim ke Groq API menggunakan method baru `parseVoiceText()` di `AiRepository` yang sudah ada. Prompt dirancang untuk:
@@ -31,7 +31,7 @@ Hasil parsing ditampilkan menggunakan `ScanResultScreen` yang sudah ada (dari fi
 - Konsistensi pengalaman user antara receipt scan dan voice input.
 
 ### 4. Entry Point: AddTransactionBottomSheet
-Voice input diakses sebagai opsi ke-3 di `AddTransactionBottomSheet` (di samping "Input Manual" dan "Scan Struk"), sesuai DESIGN.md section 3.
+Voice input diakses sebagai opsi ke-3 di `AddTransactionBottomSheet` (di samping "Input Manual" dan "Scan Struk"), sesuai [DESIGN.md](../referensi-awal/DESIGN.md) section 3.
 
 ## Konsekuensi
 - Perlu menambahkan permission `RECORD_AUDIO` di AndroidManifest.xml.

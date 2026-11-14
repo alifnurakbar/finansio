@@ -1,87 +1,137 @@
-# Finansio - Financial Tracker (Workshop Starter Code)
+# Finansio — Aplikasi Pencatat Keuangan Pribadi Berbasis Android dengan Integrasi AI
 
-Selamat datang di *repository* **Finansio**, aplikasi pelacak keuangan berbasis Android yang akan kita gunakan selama sesi *workshop*!
+Proyek skripsi **Alif Nur Akbar**.
 
-Aplikasi ini dibangun menggunakan *modern Android development stack* dan dirancang untuk membantu pengguna mencatat pemasukan (Income) dan pengeluaran (Outcome), serta melihat visualisasi statistik pengeluaran mereka.
-
-## 🚀 Fitur yang Sudah Tersedia
-Aplikasi ini sudah dilengkapi dengan kerangka dasar (*starter code*) yang sudah matang:
-- **Catat Transaksi**: Menambah, mengedit, dan menghapus catatan pemasukan/pengeluaran.
-- **Kategori Manajemen**: Menambah, mengedit, dan menghapus kategori khusus (beserta warna).
-- **Statistik Visual**: Menampilkan grafik visual (*Pie Chart* dan *Line Chart*) menggunakan *Compose Charts*.
-- **Database Lokal**: Menggunakan *Room Database* untuk penyimpanan data *offline*.
-- **Dark Theme**: UI modern berbasis Compose dengan tema gelap yang elegan.
-
-Di sesi *workshop*, kita akan membedah arsitekturnya dan di Hari ke-2 kita akan berfokus pada integrasi fitur pintar (**AI Cashflow Insight**).
+Finansio adalah aplikasi Android untuk mencatat pemasukan dan pengeluaran pribadi. Aplikasi ini menampilkan statistik keuangan dan memakai kecerdasan buatan (AI) untuk mempercepat pencatatan, yaitu memindai struk belanja, mencatat transaksi lewat suara, dan memberi ringkasan (insight) arus kas.
 
 ---
 
-## 🛠️ Tech Stack
-- **Bahasa**: [Kotlin](https://kotlinlang.org/)
-- **UI Toolkit**: [Jetpack Compose](https://developer.android.com/jetpack/compose)
-- **Arsitektur**: MVVM (Model-View-ViewModel)
-- **State Management**: StateFlow / Coroutines
-- **Database**: [Room](https://developer.android.com/training/data-storage/room)
-- **Navigasi**: Compose Navigation
-- **Grafik/Chart**: [Compose Charts](https://github.com/ehsannarmani/ComposeCharts)
+## 📌 Asal Proyek & Kredit
+
+Proyek ini **dikembangkan dari starter code** aplikasi *finance tracker* yang dibuat oleh **Satria (Kawan Kode)**. Starter code tersebut menjadi titik awal arsitektur dan fitur dasar aplikasi. Dokumen perancangan aslinya (PRD, design brief, dan ADR) tetap disimpan sebagai referensi di [`docs/referensi-awal/`](docs/referensi-awal/).
+
+Pengembangan lanjutan, penyesuaian, dan penelitian untuk skripsi dilakukan oleh Alif Nur Akbar. Rinciannya ada di bagian [Kontribusi Saya](#-kontribusi-saya).
 
 ---
 
-## 💻 Prasyarat (Prerequisites)
-Sebelum memulai, pastikan perangkat komputermu sudah terpasang:
-1. **Android Studio**: Sangat disarankan menggunakan versi terbaru (minimal *Koala* atau *Ladybug*). Unduh di [sini](https://developer.android.com/studio).
-2. **Java Development Kit (JDK)**: Minimal JDK 17 (biasanya sudah bawaan *bundled* dari Android Studio terbaru).
-3. **Android SDK**: API Level 34 atau 35.
+## 🚀 Fitur Aplikasi
+
+### Fitur dasar
+- **Catat transaksi**: tambah, ubah, dan hapus pemasukan (*income*) dan pengeluaran (*outcome*).
+- **Manajemen kategori**: tambah, ubah, dan hapus kategori beserta warnanya.
+- **Riwayat transaksi**: daftar transaksi dengan filter per bulan.
+- **Statistik visual**: *pie chart* dan *line chart* pengeluaran memakai Compose Charts.
+- **Penyimpanan offline**: semua data tersimpan di perangkat dengan Room Database.
+- **Tema gelap**: antarmuka modern berbasis Jetpack Compose dan Material 3.
+
+### Fitur AI
+- **AI Receipt Scanner**: memotret struk dengan ML Kit Document Scanner, membaca teksnya dengan ML Kit Text Recognition, lalu mengubahnya menjadi satu atau beberapa transaksi dengan model bahasa (LLM) melalui Groq API.
+- **Voice to Transaction**: mencatat transaksi lewat suara (Bahasa Indonesia) dengan Android Speech Recognizer, lalu kalimatnya diurai oleh LLM menjadi data transaksi.
+- **AI Cashflow Insight**: ringkasan dan saran tentang pola keuangan bulanan, dibuat oleh LLM dari data statistik pengguna.
 
 ---
 
-## ⚙️ Cara Setup & Menjalankan Project (Untuk Peserta)
+## 🛠️ Teknologi yang Digunakan
 
-Silakan ikuti langkah-langkah berikut untuk menjalankan aplikasi di komputermu:
+| Bagian | Teknologi |
+|---|---|
+| Bahasa | [Kotlin](https://kotlinlang.org/) |
+| Antarmuka | [Jetpack Compose](https://developer.android.com/jetpack/compose), Material 3 |
+| Arsitektur | MVVM (Model–View–ViewModel) + Repository |
+| State & asinkron | StateFlow, Kotlin Coroutines |
+| Database lokal | [Room](https://developer.android.com/training/data-storage/room) |
+| Navigasi | Compose Navigation |
+| Grafik | [Compose Charts](https://github.com/ehsannarmani/ComposeCharts) |
+| Jaringan | Retrofit |
+| Pemindaian & OCR | ML Kit Document Scanner, ML Kit Text Recognition v2 |
+| Pengenalan suara | Android `RecognizerIntent` (id-ID) |
+| LLM | [Groq API](https://console.groq.com), model `openai/gpt-oss-120b` |
 
-### 1. Fork Repository (Wajib)
-Agar kamu bisa menyimpan hasil kodinganmu sendiri nanti, **Fork** *repository* ini terlebih dahulu ke akun GitHub pribadimu menggunakan tombol *Fork* di kanan atas halaman GitHub ini.
+Target SDK: `minSdk 24`, `targetSdk 36`.
 
-### 2. Clone Repository
-Buka Terminal / *Command Prompt* / *Git Bash*, lalu *clone repository* yang sudah kamu *fork*:
+---
+
+## 🗂️ Struktur Kode
+
+```
+app/src/main/java/com/finansio/app/
+├── data/
+│   ├── local/        # Room: database, DAO, entity
+│   ├── model/        # Model hasil parsing struk
+│   ├── remote/       # Retrofit + Groq API (service, DTO, konstanta)
+│   └── repository/   # Transaction, Category, dan AI repository
+├── ui/
+│   ├── transaction/  # Beranda, form, dan riwayat transaksi
+│   ├── category/     # Manajemen kategori
+│   ├── statistics/   # Statistik + AI Cashflow Insight
+│   ├── scanner/      # Alur scan struk dan hasilnya
+│   ├── components/   # Komponen UI yang dipakai ulang
+│   ├── navigation/   # Navigasi antarlayar
+│   └── theme/        # Warna, tipografi, tema
+└── util/             # Format mata uang dan tanggal
+```
+
+Keputusan desain teknis dicatat dalam bentuk ADR (*Architecture Decision Record*) di [`docs/adr/`](docs/adr/).
+
+---
+
+## ✍️ Kontribusi Saya
+
+Bagian ini mencatat pengembangan yang saya (Alif Nur Akbar) lakukan di luar starter code awal.
+
+- **Migrasi model LLM**: model `llama-3.3-70b-versatile` dihentikan oleh Groq (HTTP 404 `model_not_found`). Saya menggantinya dengan `openai/gpt-oss-120b` dan menaikkan `max_tokens` ke 4096 karena model ini adalah *reasoning model*. Lihat [ADR-002](docs/adr/ADR-002-groq-llm-receipt-parsing.md).
+- _(Tambahkan pengembangan lain di sini, misalnya fitur baru, perubahan tampilan, pengujian, atau hasil evaluasi untuk skripsi.)_
+
+---
+
+## 💻 Prasyarat
+
+1. **Android Studio** versi terbaru ([unduh](https://developer.android.com/studio)).
+2. **JDK 17** atau lebih baru (biasanya sudah bawaan Android Studio).
+3. **Android SDK** sesuai `compileSdk` proyek.
+4. **API key Groq**, bisa dibuat gratis di [console.groq.com](https://console.groq.com).
+
+---
+
+## ⚙️ Cara Menjalankan
+
+### 1. Clone repository
 ```bash
-git clone https://github.com/USERNAME_KAMU/finansio.git
+git clone https://github.com/alifnurakbar/finansio.git
 cd finansio
 ```
 
-### 3. Buka di Android Studio
-1. Buka aplikasi **Android Studio**.
-2. Pilih menu **Open**.
-3. Cari dan pilih folder `finansio` hasil *clone* tadi.
-4. Tunggu beberapa saat sampai **Gradle Sync** selesai secara otomatis. 
-   *(Jika Gradle Sync gagal, pastikan koneksi internet stabil dan cek konfigurasi JDK di `Settings > Build, Execution, Deployment > Build Tools > Gradle` pastikan menggunakan JDK 17+).*
+### 2. Buka di Android Studio
+Pilih **Open**, arahkan ke folder `finansio`, lalu tunggu **Gradle Sync** selesai.
+Kalau sync gagal, pastikan JDK 17+ dipakai di `Settings > Build, Execution, Deployment > Build Tools > Gradle`.
 
-### 4. Isi API Key Groq
-Tambahkan baris berikut ke file `local.properties` di root project (file ini tidak ikut ter-commit). Key bisa dibuat di [console.groq.com](https://console.groq.com):
+### 3. Isi API key Groq
+Tambahkan baris berikut ke file `local.properties` di root proyek. File ini tidak ikut ter-commit, jadi API key tetap aman.
 ```properties
-GROQ_API_KEY=key_groq_kamu
+GROQ_API_KEY=isi_api_key_groq_anda
 ```
 
-### 5. Build & Run
-1. Buat **Android Emulator (AVD)** baru melalui *Device Manager* di Android Studio, atau sambungkan HP Android aslimu menggunakan kabel USB (*pastikan USB Debugging aktif*).
-2. Tekan tombol **Play (Run 'app')** 🟢 di menu atas Android Studio atau gunakan *shortcut* `Shift + F10`.
-3. Aplikasi **Finansio** akan ter- *install* dan terbuka di emulator atau HP kamu!
+### 4. Build & Run
+Jalankan di emulator atau HP Android (USB Debugging aktif) dengan tombol **Run 'app'** atau `Shift + F10`.
 
 ---
 
-## 🐛 Troubleshooting Umum
+## 🐛 Troubleshooting
 
 **1. Error "Using kotlin.sourceSets DSL to add Kotlin sources is not allowed..." saat build**
-Ini biasanya muncul karena konflik versi KSP dan pengaturan default Kotlin Gradle Plugin. Jangan khawatir, pada *starter code* ini sudah diselesaikan dengan menambahkan baris berikut di `gradle.properties`:
+Disebabkan konflik versi KSP dengan pengaturan bawaan Kotlin Gradle Plugin. Proyek ini sudah menanganinya lewat `gradle.properties`:
 ```properties
 android.disallowKotlinSourceSets=false
 ```
 
-**2. Teks label pada Chart (Grafik) berwarna hitam tidak terbaca**
-Ini juga sudah diselesaikan pada *starter code* dengan menyesuaikan *Label Properties* agar mengikuti konfigurasi *Dark Theme* pada Material3.
+**2. Label grafik berwarna hitam dan tidak terbaca**
+Sudah ditangani dengan menyesuaikan *label properties* grafik agar mengikuti tema gelap Material 3.
+
+**3. Fitur AI gagal dengan HTTP 401**
+API key Groq belum diisi atau salah. Periksa `GROQ_API_KEY` di `local.properties`, lalu *rebuild* proyek.
 
 ---
 
-## 🎓 Selamat Belajar!
-Jangan ragu untuk mengeksplorasi kode-kode yang ada di dalam *package* `com.finansio.app.ui` dan `com.finansio.app.data` sebelum sesi *workshop* dimulai. *Happy coding!*
-# finansio
+## 📄 Lisensi & Atribusi
+
+Starter code © Satria (Kawan Kode). Pengembangan lanjutan © 2026 Alif Nur Akbar.
