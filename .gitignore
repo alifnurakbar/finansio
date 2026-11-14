@@ -17,3 +17,7 @@ local.properties
 # Agents
 .agents
 .claude
+
+# API key Groq yang dibuat otomatis dari local.properties
+app/src/main/java/com/finansio/app/data/remote/GroqSecrets.kt
+.kotlin

@@ -8,6 +8,10 @@ import com.finansio.app.data.remote.GroqChatRequest
 import com.finansio.app.data.remote.GroqMessage
 import com.finansio.app.data.remote.GroqResponseFormat
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
+import retrofit2.HttpException
+import java.io.IOException
+import java.net.SocketTimeoutException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -62,7 +66,7 @@ class AiRepository(private val apiService: GroqApiService) {
                 Result.failure(Exception("Failed to get content from Groq API"))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(friendlyAiError(e), e))
         }
     }
 
@@ -126,7 +130,7 @@ class AiRepository(private val apiService: GroqApiService) {
                 Result.failure(Exception("Failed to get content from Groq API"))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(friendlyAiError(e), e))
         }
     }
 
@@ -168,8 +172,25 @@ class AiRepository(private val apiService: GroqApiService) {
 
                 Result.success(content.trim())
             } catch (e: Exception) {
-                Result.failure(e)
+                Result.failure(Exception(friendlyAiError(e), e))
             }
         }
 }
 
+
+/** Mengubah error teknis (HTTP, jaringan, JSON) menjadi pesan Bahasa Indonesia untuk pengguna. */
+internal fun friendlyAiError(e: Throwable): String = when (e) {
+    is HttpException -> when (e.code()) {
+        400 -> "Permintaan ke AI tidak valid (HTTP 400). Coba lagi."
+        401, 403 -> "API key Groq salah atau belum diisi (HTTP ${e.code()}). Periksa GROQ_API_KEY di local.properties."
+        404 -> "Model AI tidak tersedia (HTTP 404). Perbarui aplikasi ke versi terbaru."
+        413 -> "Teks terlalu panjang untuk diproses AI (HTTP 413)."
+        429 -> "Batas pemakaian AI tercapai (HTTP 429). Tunggu sebentar lalu coba lagi."
+        in 500..599 -> "Server AI sedang bermasalah (HTTP ${e.code()}). Coba lagi beberapa saat lagi."
+        else -> "AI gagal merespons (HTTP ${e.code()})."
+    }
+    is SocketTimeoutException -> "AI terlalu lama merespons. Periksa koneksi internet lalu coba lagi."
+    is IOException -> "Tidak bisa terhubung ke AI. Periksa koneksi internet Anda."
+    is JsonSyntaxException -> "AI gagal membaca struk dengan benar. Coba foto ulang dengan lebih jelas."
+    else -> e.message ?: "Terjadi kesalahan saat memproses dengan AI."
+}

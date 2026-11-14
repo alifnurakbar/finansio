@@ -41,6 +41,8 @@ fun StatisticsScreen(
     val totalWeeklyIncome by viewModel.weeklyTotalIncome.collectAsState()
     val totalWeeklyExpense by viewModel.weeklyTotalExpense.collectAsState()
     val insightState by viewModel.insightState.collectAsState()
+    val monthlyIncome by viewModel.monthlyIncome.collectAsState()
+    val monthlyExpense by viewModel.monthlyExpense.collectAsState()
 
     Scaffold { paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -65,8 +67,43 @@ fun StatisticsScreen(
                             onPrev = { monthFilterViewModel.prevMonth() },
                             onNext = { monthFilterViewModel.nextMonth() }
                         )
+
+                        // Ringkasan bulanan: income, outcome, dan saldo bulan yang dipilih
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            FinansioCard(modifier = Modifier.weight(1f)) {
+                                Text("Income", style = MaterialTheme.typography.labelMedium)
+                                Text(
+                                    CurrencyFormatter.formatRupiah(monthlyIncome),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            FinansioCard(modifier = Modifier.weight(1f)) {
+                                Text("Outcome", style = MaterialTheme.typography.labelMedium)
+                                Text(
+                                    CurrencyFormatter.formatRupiah(monthlyExpense),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        FinansioCard(modifier = Modifier.fillMaxWidth()) {
+                            Text("Saldo Bulan Ini", style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                CurrencyFormatter.formatRupiah(monthlyIncome - monthlyExpense),
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Pengeluaran per Kategori",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
                 }
                 
@@ -175,13 +212,17 @@ fun StatisticsScreen(
                                 LocalContentColor provides MaterialTheme.colorScheme.onSurface,
                                 LocalTextStyle provides MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurface)
                             ) {
-                                PieChart(
-                                    modifier = Modifier.fillMaxWidth().height(200.dp),
-                                    data = chartData,
-                                    labelHelperProperties = LabelHelperProperties(
-                                        textStyle = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurface)
-                                    ),
-                                )
+                                // PieChart menyimpan data pertama yang diterimanya. key() memaksa
+                                // grafik dibuat ulang saat bulan atau isi datanya berubah.
+                                androidx.compose.runtime.key(selectedMonth, summaries) {
+                                    PieChart(
+                                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                                        data = chartData,
+                                        labelHelperProperties = LabelHelperProperties(
+                                            textStyle = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurface)
+                                        ),
+                                    )
+                                }
                             }
                         }
                         

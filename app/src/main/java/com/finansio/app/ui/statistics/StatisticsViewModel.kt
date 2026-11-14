@@ -47,7 +47,21 @@ class StatisticsViewModel(
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
-    private val currentWeekTransactions = filterIndex.flatMapLatest { index ->
+    // Total income & outcome untuk bulan yang dipilih (dipakai kartu ringkasan mode Bulan)
+    private fun monthlyTotal(type: TransactionType): StateFlow<Long> =
+        selectedMonth.flatMapLatest { month ->
+            transactionRepository.getTotalByTypeAndDateRange(
+                type,
+                DateUtils.getStartOfMonth(month.year, month.month),
+                DateUtils.getEndOfMonth(month.year, month.month)
+            )
+        }.map { it ?: 0L }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+
+    val monthlyIncome: StateFlow<Long> = monthlyTotal(TransactionType.INCOME)
+    val monthlyExpense: StateFlow<Long> = monthlyTotal(TransactionType.EXPENSE)
+
+    private val currentWeekTransactions =filterIndex.flatMapLatest { index ->
         if (index == 0) {
             transactionRepository.getByDateRange(DateUtils.getStartOfWeek(), DateUtils.getEndOfWeek())
         } else {

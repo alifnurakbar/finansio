@@ -11,6 +11,28 @@ val localProperties = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
+// Tulis GROQ_API_KEY dari local.properties ke GroqSecrets.kt (masuk .gitignore).
+// Dipakai sebagai pengganti BuildConfig supaya editor selain Android Studio
+// (misalnya VS Code) juga bisa membaca nilainya tanpa tanda merah.
+run {
+    val apiKey = localProperties.getProperty("GROQ_API_KEY", "")
+        .replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$")
+    val secretsFile = file("src/main/java/com/finansio/app/data/remote/GroqSecrets.kt")
+    val content = """
+        |// FILE INI DIBUAT OTOMATIS oleh app/build.gradle.kts dari local.properties.
+        |// Jangan diedit dan jangan di-commit (sudah masuk .gitignore).
+        |package com.finansio.app.data.remote
+        |
+        |internal object GroqSecrets {
+        |    const val GROQ_API_KEY: String = "$apiKey"
+        |}
+        |""".trimMargin()
+    if (!secretsFile.exists() || secretsFile.readText() != content) {
+        secretsFile.parentFile.mkdirs()
+        secretsFile.writeText(content)
+    }
+}
+
 android {
     namespace = "com.finansio.app"
     compileSdk {
@@ -27,12 +49,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField(
-            "String",
-            "GROQ_API_KEY",
-            "\"${localProperties.getProperty("GROQ_API_KEY", "")}\""
-        )
     }
 
     buildTypes {
@@ -50,7 +66,7 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true
+        buildConfig = false
     }
 }
 

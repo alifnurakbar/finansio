@@ -257,6 +257,27 @@ fun ScanResultScreen(
                                     style = MaterialTheme.typography.labelMedium,
                                     modifier = Modifier.padding(bottom = 4.dp)
                                 )
+                                // Tanggal transaksi mengikuti tanggal di struk, jadi tampilkan
+                                // dengan jelas supaya pengguna tahu masuk ke bulan apa.
+                                val saveDate = currentState.items.first().date
+                                Text(
+                                    text = "📅 Disimpan ke: ${com.finansio.app.util.DateUtils.formatDisplayDate(saveDate)}",
+                                    color = TextPrimary,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                val now = java.util.Calendar.getInstance()
+                                val then = java.util.Calendar.getInstance().apply { timeInMillis = saveDate }
+                                val otherMonth = now.get(java.util.Calendar.YEAR) != then.get(java.util.Calendar.YEAR) ||
+                                    now.get(java.util.Calendar.MONTH) != then.get(java.util.Calendar.MONTH)
+                                if (otherMonth) {
+                                    Text(
+                                        text = "Tanggal struk berbeda dengan bulan ini. Transaksi akan muncul di bulan tersebut, bukan bulan sekarang.",
+                                        color = Coral,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                }
                             }
                             items(currentState.items, key = { it.id }) { item ->
                                 ScannedItemCard(

@@ -11,9 +11,8 @@ import com.finansio.app.data.repository.AiRepository
 import com.finansio.app.data.repository.CategoryRepository
 import com.finansio.app.data.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -39,8 +38,16 @@ class ScanResultViewModel(
     private val _isVoiceMode = MutableStateFlow(false)
     val isVoiceMode: StateFlow<Boolean> = _isVoiceMode
 
-    private val categories: StateFlow<List<CategoryEntity>> = categoryRepository.getAll()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    // Ambil kategori langsung dari database saat dibutuhkan. Sebelumnya memakai
+    // stateIn(WhileSubscribed) yang tidak pernah di-collect, sehingga daftarnya selalu kosong.
+    private suspend fun loadCategories(): List<CategoryEntity> = categoryRepository.getAll().first()
+
+    // Kategori cadangan bila AI tidak yakin: pengeluaran -> "Belanja", pemasukan -> "Lainnya".
+    private fun fallbackCategory(categories: List<CategoryEntity>, type: TransactionType): CategoryEntity? {
+        val name = if (type == TransactionType.EXPENSE) "Belanja" else "Lainnya"
+        return categories.find { it.type == type && it.name.equals(name, ignoreCase = true) }
+            ?: categories.firstOrNull { it.type == type }
+    }
 
     fun processScannedImage(context: Context, imageUri: Uri) {
         _isVoiceMode.value = false
@@ -57,14 +64,14 @@ class ScanResultViewModel(
 
                 _scanState.value = ScanUiState.Parsing(rawText)
 
-                val currentCategories = categories.value
+                val currentCategories = loadCategories()
                 val result = aiRepository.parseReceiptText(rawText, currentCategories)
 
                 result.onSuccess { parseResult ->
                     val uiItems = parseResult.items.map { item ->
                         val matchedCategory = currentCategories.find { 
                             it.name.equals(item.suggestedCategory, ignoreCase = true) 
-                        }
+                        } ?: fallbackCategory(currentCategories, TransactionType.EXPENSE)
                         
                         val dateMillis = parseDateToMillis(parseResult.date) ?: System.currentTimeMillis()
                         
@@ -100,7 +107,7 @@ class ScanResultViewModel(
 
                 _scanState.value = ScanUiState.Parsing(voiceText)
 
-                val currentCategories = categories.value
+                val currentCategories = loadCategories()
                 val result = aiRepository.parseVoiceText(voiceText, currentCategories)
 
                 result.onSuccess { parseResult ->
@@ -113,7 +120,7 @@ class ScanResultViewModel(
                         
                         val matchedCategory = currentCategories.find { 
                             it.name.equals(item.suggestedCategory, ignoreCase = true) && it.type == itemType
-                        }
+                        } ?: fallbackCategory(currentCategories, itemType)
                         
                         // Untuk voice, selalu pakai waktu saat ini (Groq tidak tahu tanggal hari ini)
                         val dateMillis = System.currentTimeMillis()
