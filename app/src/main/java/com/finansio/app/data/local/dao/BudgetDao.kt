@@ -7,6 +7,7 @@ import androidx.room.Query
 import com.finansio.app.data.local.entity.BudgetEntity
 import kotlinx.coroutines.flow.Flow
 
+/** Akses tabel `budgets`: membaca, menyimpan, dan menghapus anggaran bulanan per kategori. */
 @Dao
 interface BudgetDao {
     @Query("SELECT * FROM budgets")

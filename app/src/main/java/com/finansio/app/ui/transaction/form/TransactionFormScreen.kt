@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.finansio.app.util.CurrencyVisualTransformation
 import com.finansio.app.util.DateUtils
 
+/** Form tambah/ubah transaksi manual: nominal, jenis, kategori, tanggal, dan catatan. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TransactionFormScreen(

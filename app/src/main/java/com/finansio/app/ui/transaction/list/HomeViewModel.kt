@@ -10,6 +10,7 @@ import com.finansio.app.ui.SelectedMonth
 import com.finansio.app.util.DateUtils
 import kotlinx.coroutines.flow.*
 
+/** State Beranda: total pemasukan/pengeluaran, saldo, data grafik mingguan, dan 5 transaksi terbaru. */
 class HomeViewModel(
     private val repository: TransactionRepository,
     private val monthFilterViewModel: MonthFilterViewModel

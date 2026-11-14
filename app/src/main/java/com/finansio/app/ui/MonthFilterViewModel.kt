@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Calendar
 
+/** Menyimpan bulan yang sedang dipilih, dibagikan ke Beranda, Statistik, dan Anggaran agar selalu sinkron. */
 data class SelectedMonth(val year: Int, val month: Int)
 
 class MonthFilterViewModel : ViewModel() {

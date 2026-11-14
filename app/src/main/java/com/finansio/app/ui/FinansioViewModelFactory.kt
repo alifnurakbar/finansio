@@ -11,6 +11,7 @@ import com.finansio.app.ui.transaction.form.TransactionFormViewModel
 import com.finansio.app.ui.transaction.history.TransactionHistoryViewModel
 import com.finansio.app.ui.transaction.list.HomeViewModel
 
+/** Pabrik ViewModel: memberikan repository yang dibutuhkan ke setiap ViewModel. */
 @Suppress("UNCHECKED_CAST")
 class FinansioViewModelFactory(
     private val transactionRepository: TransactionRepository,

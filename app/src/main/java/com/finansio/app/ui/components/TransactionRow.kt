@@ -26,6 +26,7 @@ import com.finansio.app.data.local.entity.TransactionEntity
 import com.finansio.app.data.local.entity.TransactionType
 import com.finansio.app.util.CurrencyFormatter
 
+/** Satu baris transaksi: ikon, kategori, catatan, dan nominal berwarna. */
 @Composable
 fun TransactionRow(
     transaction: TransactionEntity,

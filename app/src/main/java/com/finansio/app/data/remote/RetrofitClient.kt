@@ -8,6 +8,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
+/** Membuat klien HTTP (OkHttp + Retrofit) untuk Groq: header Authorization, logging (API key disamarkan), dan batas waktu. */
 class GroqAuthInterceptor(private val apiKey: String) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request().newBuilder()

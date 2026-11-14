@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+/** Kartu dasar bersudut membulat yang dipakai di seluruh aplikasi. */
 @Composable
 fun FinansioCard(
     modifier: Modifier = Modifier,

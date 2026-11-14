@@ -3,6 +3,7 @@ package com.finansio.app.util
 import java.text.NumberFormat
 import java.util.Locale
 
+/** Format angka menjadi Rupiah, misalnya 15000 menjadi "Rp 15.000". */
 object CurrencyFormatter {
     fun formatRupiah(amount: Long): String {
         val localeID = Locale("in", "ID")

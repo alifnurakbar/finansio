@@ -12,6 +12,7 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.tasks.await
 
+/** Pembantu ML Kit: membuka pemindai dokumen (kamera) dan membaca teks dari gambar struk. */
 object ReceiptScannerHelper {
 
     fun getScannerOptions(): GmsDocumentScannerOptions {

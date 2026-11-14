@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
+/** Repository kategori: penghubung ViewModel dengan CategoryDao, menjalankan operasi tulis di thread IO. */
 class CategoryRepository(private val categoryDao: CategoryDao) {
     fun getAll(): Flow<List<CategoryEntity>> = categoryDao.getAll()
     fun getByType(type: TransactionType): Flow<List<CategoryEntity>> = categoryDao.getByType(type)

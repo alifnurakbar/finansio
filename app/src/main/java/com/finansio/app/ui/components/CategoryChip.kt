@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+/** Label kategori kecil dengan titik warna. */
 @Composable
 fun CategoryChip(
     name: String,

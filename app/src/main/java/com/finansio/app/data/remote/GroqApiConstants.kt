@@ -1,5 +1,6 @@
 package com.finansio.app.data.remote
 
+/** Konstanta Groq API: alamat server, API key (dari GroqSecrets), dan nama model LLM. */
 object GroqApiConstants {
     const val BASE_URL = "https://api.groq.com/"
     // Isi GROQ_API_KEY di local.properties (tidak ikut ter-commit). Key dibuat di console.groq.com

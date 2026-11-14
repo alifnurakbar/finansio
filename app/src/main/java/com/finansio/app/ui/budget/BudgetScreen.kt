@@ -47,6 +47,7 @@ private fun BudgetLevel.color(): Color = when (this) {
 private fun parseColor(hex: String): Color =
     try { Color(android.graphics.Color.parseColor(hex)) } catch (e: Exception) { TextSecondary }
 
+/** Halaman Anggaran: ringkasan total terpakai, kartu progres per kategori, serta dialog tambah/ubah/hapus anggaran. */
 @Composable
 fun BudgetScreen(
     viewModel: BudgetViewModel,

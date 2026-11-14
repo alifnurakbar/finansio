@@ -58,6 +58,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 
+/** Halaman Profil & Pengaturan: nama pengguna, Kelola Kategori, Anggaran, Ekspor Laporan, Pengingat Harian, Kunci Sidik Jari, Backup/Restore, dan Tentang Aplikasi. */
 @Composable
 fun ProfileScreen(
     settingsRepository: SettingsRepository,

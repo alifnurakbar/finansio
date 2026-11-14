@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
+/** Repository transaksi: penghubung ViewModel dengan TransactionDao (daftar, total per periode, total per kategori). */
 class TransactionRepository(private val transactionDao: TransactionDao) {
     fun getAll(): Flow<List<TransactionEntity>> = transactionDao.getAll()
     fun getRecentTransactions(limit: Int): Flow<List<TransactionEntity>> = transactionDao.getRecentTransactions(limit)

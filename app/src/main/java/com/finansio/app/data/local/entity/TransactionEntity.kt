@@ -3,6 +3,7 @@ package com.finansio.app.data.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+/** Tabel `transactions`: satu catatan pemasukan atau pengeluaran (nominal, kategori, catatan, tanggal). */
 @Entity(tableName = "transactions")
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true)

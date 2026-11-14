@@ -28,6 +28,7 @@ private val DarkColorScheme = darkColorScheme(
     onSurfaceVariant = TextPrimary
 )
 
+/** Tema Material 3 gelap Finansio. */
 @Composable
 fun FinansioTheme(
     content: @Composable () -> Unit

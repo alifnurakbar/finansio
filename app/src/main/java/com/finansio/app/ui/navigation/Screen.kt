@@ -1,5 +1,6 @@
 package com.finansio.app.ui.navigation
 
+/** Daftar rute (alamat) setiap halaman untuk Compose Navigation. */
 sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Statistics : Screen("statistics")

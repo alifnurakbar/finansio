@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+/** Alur scan struk dan suara: OCR, kirim ke AI, cocokkan kategori, lalu simpan sebagai transaksi. */
 sealed class ScanUiState {
     object Idle : ScanUiState()
     object Scanning : ScanUiState()

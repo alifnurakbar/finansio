@@ -2,6 +2,7 @@ package com.finansio.app.data.remote
 
 import com.google.gson.annotations.SerializedName
 
+/** Model data request/response Groq Chat Completions yang dikirim dan diterima dalam format JSON. */
 data class GroqChatRequest(
     @SerializedName("model") val model: String = GroqApiConstants.MODEL,
     @SerializedName("messages") val messages: List<GroqMessage>,

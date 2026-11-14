@@ -8,6 +8,7 @@ import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
 
+/** Menampilkan titik ribuan saat mengetik nominal tanpa mengubah angka aslinya. */
 class CurrencyVisualTransformation : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
         val originalText = text.text.filter { it.isDigit() }

@@ -33,6 +33,7 @@ import com.finansio.app.ui.theme.*
 import com.finansio.app.util.CurrencyFormatter.formatRupiah
 import com.finansio.app.data.local.entity.TransactionType
 
+/** Halaman hasil scan struk/suara: menampilkan item hasil AI untuk diperiksa, diubah, lalu disimpan sekaligus. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScanResultScreen(

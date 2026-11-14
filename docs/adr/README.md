@@ -13,3 +13,8 @@ Catatan keputusan teknis proyek Finansio.
 | [004](ADR-004-api-key-storage-workshop.md) | Penyimpanan API key |
 | [005](ADR-005-voice-to-transaction.md) | Voice to transaction |
 | [006](ADR-006-ai-cashflow-insight.md) | AI Cashflow Insight |
+| [007](ADR-007-budget-per-category.md) | Anggaran per kategori + migrasi database v1→v2 |
+| [008](ADR-008-smart-budget-alerts.md) | Peringatan anggaran pintar (AI) |
+| [009](ADR-009-ai-finance-chat.md) | Chat Asisten Keuangan AI dan privasi data |
+| [010](ADR-010-export-reminder-lock-backup.md) | Ekspor laporan, pengingat harian, kunci sidik jari, backup & restore |
+| [011](ADR-011-custom-statistics-charts.md) | Grafik statistik kustom + hasil validasi palet |

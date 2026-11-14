@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.finansio.app.ui.components.EmptyStateView
 import com.finansio.app.ui.components.TransactionRow
 
+/** Halaman riwayat semua transaksi dengan pencarian. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionHistoryScreen(

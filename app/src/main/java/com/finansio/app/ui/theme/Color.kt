@@ -2,6 +2,7 @@ package com.finansio.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+/** Palet warna Finansio (tema gelap dengan aksen lime, lavender, coral, dan kuning). */
 val Background = Color(0xFF121214)
 val Surface = Color(0xFF1D1E22)
 val SurfaceRaised = Color(0xFF26272C)

@@ -5,6 +5,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+/** Pembantu tanggal: awal/akhir bulan dan minggu, serta format tanggal Bahasa Indonesia. */
 object DateUtils {
     val localeID = Locale("in", "ID")
 

@@ -23,6 +23,7 @@ import com.finansio.app.data.local.entity.TransactionType
 import com.finansio.app.ui.components.CategoryChip
 import com.finansio.app.ui.components.FinansioTopBar
 
+/** Halaman Kelola Kategori (dibuka dari Profil): daftar kategori pemasukan dan pengeluaran beserta form tambah/ubah. */
 @Composable
 fun CategoryScreen(
     viewModel: CategoryViewModel,

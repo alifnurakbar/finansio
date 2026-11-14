@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+/** Judul halaman dengan tombol kembali opsional. */
 @Composable
 fun FinansioTopBar(
     title: String,

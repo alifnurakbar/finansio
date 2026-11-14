@@ -21,6 +21,7 @@ import com.finansio.app.ui.theme.SurfaceRaised
 import com.finansio.app.ui.theme.TextPrimary
 import com.finansio.app.ui.theme.TextSecondary
 
+/** Navigasi bulan sebelumnya/berikutnya dengan label bulan. */
 @Composable
 fun MonthNavigatorBar(
     label: String,

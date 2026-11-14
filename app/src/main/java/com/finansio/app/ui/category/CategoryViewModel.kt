@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
+/** State dan aksi halaman Kelola Kategori. */
 class CategoryViewModel(
     private val categoryRepository: CategoryRepository
 ) : ViewModel() {

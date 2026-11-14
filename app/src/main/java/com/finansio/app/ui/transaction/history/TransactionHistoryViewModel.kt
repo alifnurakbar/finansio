@@ -8,6 +8,7 @@ import com.finansio.app.util.DateUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+/** State halaman riwayat: daftar transaksi yang difilter berdasarkan kata kunci. */
 class TransactionHistoryViewModel(private val repository: TransactionRepository) : ViewModel() {
 
     val currentMonthOffset = MutableStateFlow(0)

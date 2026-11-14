@@ -3,6 +3,7 @@ package com.finansio.app.ui.scanner
 import com.finansio.app.data.local.entity.TransactionType
 import java.util.UUID
 
+/** Satu item hasil scan/suara yang siap ditampilkan dan diedit sebelum disimpan. */
 data class ScannedItemUiModel(
     val id: String = UUID.randomUUID().toString(),
     val name: String,

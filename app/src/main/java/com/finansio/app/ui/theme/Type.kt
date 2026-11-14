@@ -7,6 +7,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 // Set of Material typography styles to start with
+/** Gaya tipografi aplikasi. */
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = FontFamily.Default,

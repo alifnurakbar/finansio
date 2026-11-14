@@ -10,6 +10,7 @@ import com.finansio.app.data.local.entity.CategoryEntity
 import com.finansio.app.data.local.entity.TransactionType
 import kotlinx.coroutines.flow.Flow
 
+/** Akses tabel `categories`: membaca, menambah, mengubah, dan menghapus kategori pemasukan/pengeluaran. */
 @Dao
 interface CategoryDao {
     @Query("SELECT * FROM categories")

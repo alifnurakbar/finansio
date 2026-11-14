@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
+/** Tampilan kosong (ikon + pesan) saat belum ada data. */
 @Composable
 fun EmptyStateView(
     message: String,

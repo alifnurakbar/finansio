@@ -2,6 +2,7 @@ package com.finansio.app.data.model
 
 import com.google.gson.annotations.SerializedName
 
+/** Hasil penguraian AI dari teks struk atau ucapan: nama toko, tanggal, daftar item, dan total. */
 data class ReceiptParseResult(
     @SerializedName("merchant_name") val merchantName: String?,
     @SerializedName("date") val date: String?,

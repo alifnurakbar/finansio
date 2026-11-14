@@ -10,6 +10,7 @@ import com.finansio.app.data.repository.CategoryRepository
 import com.finansio.app.data.repository.TransactionRepository
 import com.finansio.app.data.settings.SettingsRepository
 
+/** Titik awal aplikasi. Membuat database, repository, dan manager satu kali (manual dependency injection), lalu menjalankan pemantau peringatan anggaran dan menjadwalkan pengingat harian. */
 class FinansioApplication : Application() {
     val database by lazy { AppDatabase.getDatabase(this) }
     val categoryRepository by lazy { CategoryRepository(database.categoryDao()) }

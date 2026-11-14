@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.finansio.app.ui.MonthFilterViewModel
 
+/** Activity utama: menyiapkan ViewModel, menu bawah 5 item (Home, Statistik, Catat, Anggaran, Profil), pilihan pencatatan (manual, scan struk, suara), dan layar kunci sidik jari. */
 class MainActivity : FragmentActivity() {
 
     // Status kunci sidik jari. Aplikasi terkunci saat dibuka, atau saat kembali setelah

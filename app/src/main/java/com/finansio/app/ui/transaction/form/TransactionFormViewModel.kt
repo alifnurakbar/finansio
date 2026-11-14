@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
 
+/** State dan aksi form transaksi (muat, simpan, hapus). */
 class TransactionFormViewModel(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository

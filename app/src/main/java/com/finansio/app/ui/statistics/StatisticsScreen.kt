@@ -43,6 +43,7 @@ private val ExpenseColor = Coral
 private fun parseHex(hex: String?): Color =
     try { Color(android.graphics.Color.parseColor(hex ?: "#8E8F94")) } catch (e: Exception) { TextSecondary }
 
+/** Halaman Statistik: mode Minggu (arus kas harian) dan Bulan (kartu saldo, tren 6 bulan, donat per kategori), serta AI Cashflow Insight. */
 @Composable
 fun StatisticsScreen(
     viewModel: StatisticsViewModel,
