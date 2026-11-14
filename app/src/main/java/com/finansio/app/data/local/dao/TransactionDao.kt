@@ -49,6 +49,16 @@ interface TransactionDao {
     """)
     fun getExpenseTotalsByCategoryId(start: Long, end: Long): Flow<List<CategoryIdTotal>>
 
+    // --- Untuk backup & restore ---
+    @Query("SELECT * FROM transactions")
+    fun getAllOnce(): List<TransactionEntity>
+
+    @Query("DELETE FROM transactions")
+    fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAll(transactions: List<TransactionEntity>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(transaction: TransactionEntity)
 

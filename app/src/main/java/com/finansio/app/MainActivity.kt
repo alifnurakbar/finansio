@@ -1,7 +1,10 @@
 package com.finansio.app
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
+import android.os.SystemClock
+import com.finansio.app.security.AppLock
+import com.finansio.app.security.LockScreen
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,9 +54,57 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.finansio.app.ui.MonthFilterViewModel
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
+
+    // Status kunci sidik jari. Aplikasi terkunci saat dibuka, atau saat kembali setelah
+    // ditinggal lebih dari 30 detik (supaya tidak terkunci saat membuka kamera/scanner sebentar).
+    private val isLocked = mutableStateOf(false)
+    private var backgroundSince = 0L
+
+    private val lockEnabled get() = (application as FinansioApplication).settingsRepository.lockEnabled.value
+
+    override fun onStart() {
+        super.onStart()
+        if (lockEnabled && backgroundSince > 0 && SystemClock.elapsedRealtime() - backgroundSince > LOCK_AFTER_MS) {
+            isLocked.value = true
+        }
+        backgroundSince = 0L
+    }
+
+    override fun onStop() {
+        super.onStop()
+        backgroundSince = SystemClock.elapsedRealtime()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_LOCKED, isLocked.value)
+    }
+
+    private fun unlock() {
+        val reason = AppLock.unavailableReason(this)
+        if (reason != null) {
+            // Kunci layar HP sudah dihapus: matikan kunci agar pengguna tidak terkunci selamanya
+            (application as FinansioApplication).settingsRepository.setLockEnabled(false)
+            isLocked.value = false
+            return
+        }
+        AppLock.authenticate(
+            this,
+            title = "Buka Finansio",
+            subtitle = "Gunakan sidik jari atau kunci layar HP",
+            onSuccess = { isLocked.value = false }
+        )
+    }
+
+    private companion object {
+        const val LOCK_AFTER_MS = 30_000L
+        const val KEY_LOCKED = "locked"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        isLocked.value = savedInstanceState?.getBoolean(KEY_LOCKED) ?: lockEnabled
         
         val app = application as FinansioApplication
         // MonthFilterViewModel is created outside the factory so it's shared across screens
@@ -73,6 +124,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FinansioTheme {
+            Box(modifier = Modifier.fillMaxSize()) {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
@@ -245,6 +297,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+                if (isLocked.value) {
+                    LockScreen(onUnlock = ::unlock)
+                }
+            }
             }
         }
     }

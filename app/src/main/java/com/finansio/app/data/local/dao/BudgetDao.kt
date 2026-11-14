@@ -15,6 +15,16 @@ interface BudgetDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun upsert(budget: BudgetEntity)
 
+    // --- Untuk backup & restore ---
+    @Query("SELECT * FROM budgets")
+    fun getAllOnce(): List<BudgetEntity>
+
+    @Query("DELETE FROM budgets")
+    fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAll(budgets: List<BudgetEntity>)
+
     @Query("DELETE FROM budgets WHERE categoryId = :categoryId")
     fun deleteByCategory(categoryId: Int)
 }

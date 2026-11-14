@@ -45,6 +45,9 @@ Pengembangan lanjutan, penyesuaian, dan penelitian untuk skripsi dilakukan oleh 
 | Jaringan | Retrofit |
 | Pemindaian & OCR | ML Kit Document Scanner, ML Kit Text Recognition v2 |
 | Pengenalan suara | Android `RecognizerIntent` (id-ID) |
+| Keamanan | AndroidX Biometric (sidik jari / kunci layar) |
+| Laporan | Android `PdfDocument`, CSV |
+| Notifikasi | `AlarmManager`, `NotificationCompat` |
 | LLM | [Groq API](https://console.groq.com), model `openai/gpt-oss-120b` |
 
 Target SDK: `minSdk 24`, `targetSdk 36`.
@@ -80,7 +83,17 @@ Keputusan desain teknis dicatat dalam bentuk ADR (*Architecture Decision Record*
 Bagian ini mencatat pengembangan yang saya (Alif Nur Akbar) lakukan di luar starter code awal.
 
 - **Migrasi model LLM**: model `llama-3.3-70b-versatile` dihentikan oleh Groq (HTTP 404 `model_not_found`). Saya menggantinya dengan `openai/gpt-oss-120b` dan menaikkan `max_tokens` ke 4096 karena model ini adalah *reasoning model*. Lihat [ADR-002](docs/adr/ADR-002-groq-llm-receipt-parsing.md).
-- _(Tambahkan pengembangan lain di sini, misalnya fitur baru, perubahan tampilan, pengujian, atau hasil evaluasi untuk skripsi.)_
+- **Perbaikan bug scan struk**: daftar kategori sebelumnya selalu kosong saat dikirim ke AI, sehingga semua item tersimpan tanpa kategori. Sekarang kategori dibaca langsung dari database, ada kategori cadangan, dan layar hasil scan menampilkan tanggal simpan.
+- **Perbaikan grafik statistik**: grafik lingkaran kini diperbarui saat bulan/data berubah, ditambah ringkasan Income, Outcome, dan Saldo bulanan.
+- **Pesan error AI yang ramah pengguna** (HTTP 401/404/429, koneksi, timeout) dalam Bahasa Indonesia.
+- **Anggaran per kategori** dengan progress bar (hijau/kuning/merah). Database ditingkatkan dari versi 1 ke 2 lewat migrasi tanpa menghapus data.
+- **Peringatan anggaran pintar (AI)**: saat pengeluaran kategori mencapai 80% dan 100%, aplikasi meminta saran singkat dari LLM, lalu menampilkannya sebagai banner di Home dan notifikasi HP.
+- **Chat Asisten Keuangan AI**: tanya jawab bebas berdasarkan data keuangan pengguna. Hanya data agregat yang dikirim ke AI (tanpa nama dan catatan transaksi), dan riwayat chat tidak disimpan.
+- **Ekspor laporan bulanan** ke PDF (ringkasan, grafik batang kategori, anggaran, tabel transaksi) dan CSV untuk Excel/Google Sheets.
+- **Pengingat harian** dengan jam yang bisa diatur, dilewati otomatis jika hari itu sudah ada transaksi.
+- **Kunci aplikasi** dengan sidik jari atau kunci layar HP (androidx.biometric).
+- **Backup & restore** seluruh data ke file JSON (bisa disimpan ke Google Drive).
+- **Halaman Profil & Pengaturan** serta navigasi bawah 5 menu dengan ikon Material Rounded yang seragam.
 
 ---
 

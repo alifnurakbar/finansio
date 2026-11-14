@@ -20,9 +20,15 @@ class FinansioApplication : Application() {
     }
     val settingsRepository by lazy { SettingsRepository(this) }
     val budgetAlertManager by lazy { BudgetAlertManager(this, budgetRepository, aiRepository) }
+    val reportExporter by lazy {
+        com.finansio.app.data.export.ReportExporter(this, transactionRepository, budgetRepository)
+    }
+    val backupManager by lazy { com.finansio.app.data.backup.BackupManager(this, database, settingsRepository) }
 
     override fun onCreate() {
         super.onCreate()
         budgetAlertManager.start()
+        com.finansio.app.data.reminder.DailyReminder.createChannel(this)
+        com.finansio.app.data.reminder.DailyReminder.reschedule(this)
     }
 }

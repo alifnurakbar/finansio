@@ -110,8 +110,11 @@ fun AppNavGraph(
             BudgetScreen(viewModel = budgetViewModel, monthFilterViewModel = monthFilterViewModel)
         }
         composable(Screen.Profile.route) {
+            val app = androidx.compose.ui.platform.LocalContext.current.applicationContext as com.finansio.app.FinansioApplication
             ProfileScreen(
                 settingsRepository = settingsRepository,
+                reportExporter = app.reportExporter,
+                backupManager = app.backupManager,
                 onNavigateToCategories = { navController.navigate(Screen.Category.route) },
                 onNavigateToBudget = { navController.navigateToTab(Screen.Budget.route) }
             )
