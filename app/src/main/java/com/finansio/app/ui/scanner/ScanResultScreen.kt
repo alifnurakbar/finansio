@@ -13,10 +13,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Receipt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -106,7 +106,7 @@ fun ScanResultScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        Icons.Default.ArrowBack,
+                        Icons.Rounded.ArrowBack,
                         contentDescription = "Kembali",
                         tint = TextPrimary,
                         modifier = Modifier.size(20.dp)
@@ -307,7 +307,7 @@ fun ScanResultScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Default.Receipt,
+                                Icons.Rounded.Receipt,
                                 contentDescription = null,
                                 tint = Coral,
                                 modifier = Modifier.size(36.dp)
@@ -454,7 +454,7 @@ fun ScannedItemCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Default.Edit,
+                            Icons.Rounded.Edit,
                             contentDescription = "Edit",
                             tint = Lavender,
                             modifier = Modifier.size(16.dp)
@@ -471,7 +471,7 @@ fun ScannedItemCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Default.Delete,
+                            Icons.Rounded.Delete,
                             contentDescription = "Hapus",
                             tint = Coral,
                             modifier = Modifier.size(16.dp)
@@ -629,7 +629,7 @@ fun ScanEmptyView() {
                     .background(SurfaceRaised),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Receipt, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(36.dp))
+                Icon(Icons.Rounded.Receipt, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(36.dp))
             }
             Spacer(modifier = Modifier.height(16.dp))
             Text("Tidak Ada Item", color = TextPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)

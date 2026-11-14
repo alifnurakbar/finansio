@@ -5,8 +5,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room.migration.Migration
+import com.finansio.app.data.local.dao.BudgetDao
 import com.finansio.app.data.local.dao.CategoryDao
 import com.finansio.app.data.local.dao.TransactionDao
+import com.finansio.app.data.local.entity.BudgetEntity
 import com.finansio.app.data.local.entity.CategoryEntity
 import com.finansio.app.data.local.entity.TransactionEntity
 import com.finansio.app.data.local.entity.TransactionType
@@ -14,14 +17,31 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [CategoryEntity::class, TransactionEntity::class], version = 1, exportSchema = false)
+@Database(
+    entities = [CategoryEntity::class, TransactionEntity::class, BudgetEntity::class],
+    version = 2,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun transactionDao(): TransactionDao
+    abstract fun budgetDao(): BudgetDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        /** v1 -> v2: menambah tabel anggaran. Data transaksi dan kategori yang ada tetap utuh. */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `budgets` (" +
+                        "`categoryId` INTEGER NOT NULL, " +
+                        "`monthlyLimit` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`categoryId`))"
+                )
+            }
+        }
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -30,6 +50,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "finansio_database"
                 )
+                .addMigrations(MIGRATION_1_2)
                 .addCallback(DatabaseCallback())
                 .build()
                 INSTANCE = instance

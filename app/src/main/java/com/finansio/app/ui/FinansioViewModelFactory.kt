@@ -16,7 +16,8 @@ class FinansioViewModelFactory(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val aiRepository: com.finansio.app.data.repository.AiRepository,
-    private val monthFilterViewModel: MonthFilterViewModel
+    private val monthFilterViewModel: MonthFilterViewModel,
+    private val budgetRepository: com.finansio.app.data.repository.BudgetRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
@@ -37,6 +38,9 @@ class FinansioViewModelFactory(
             }
             modelClass.isAssignableFrom(com.finansio.app.ui.scanner.ScanResultViewModel::class.java) -> {
                 com.finansio.app.ui.scanner.ScanResultViewModel(aiRepository, categoryRepository, transactionRepository) as T
+            }
+            modelClass.isAssignableFrom(com.finansio.app.ui.budget.BudgetViewModel::class.java) -> {
+                com.finansio.app.ui.budget.BudgetViewModel(budgetRepository, categoryRepository, monthFilterViewModel) as T
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }

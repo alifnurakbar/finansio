@@ -40,6 +40,15 @@ interface TransactionDao {
     """)
     fun getExpenseByCategoryInRange(type: TransactionType, start: Long, end: Long): Flow<List<CategorySummary>>
 
+    /** Total pengeluaran per kategori (berdasarkan id) dalam rentang tanggal, untuk menghitung progres anggaran. */
+    @Query("""
+        SELECT categoryId, SUM(amount) AS total
+        FROM transactions
+        WHERE type = 'EXPENSE' AND categoryId IS NOT NULL AND date BETWEEN :start AND :end
+        GROUP BY categoryId
+    """)
+    fun getExpenseTotalsByCategoryId(start: Long, end: Long): Flow<List<CategoryIdTotal>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(transaction: TransactionEntity)
 

@@ -8,9 +8,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +25,8 @@ import com.finansio.app.ui.components.FinansioTopBar
 
 @Composable
 fun CategoryScreen(
-    viewModel: CategoryViewModel
+    viewModel: CategoryViewModel,
+    onBack: (() -> Unit)? = null
 ) {
     val categories by viewModel.categories.collectAsState()
     
@@ -33,9 +34,18 @@ fun CategoryScreen(
     var selectedCategoryForEdit by remember { mutableStateOf<CategoryEntity?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<CategoryEntity?>(null) }
     
-    Scaffold { paddingValues ->
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { viewModel.triggerAddCategory() },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Rounded.Add, contentDescription = "Tambah Kategori", tint = MaterialTheme.colorScheme.onPrimary)
+            }
+        }
+    ) { paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            FinansioTopBar(title = "Kategori")
+            FinansioTopBar(title = "Kelola Kategori", onBackClick = onBack)
             
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -228,10 +238,10 @@ fun CategoryRow(category: CategoryEntity, onEdit: () -> Unit, onDelete: () -> Un
         CategoryChip(name = category.name, colorHex = category.colorHex)
         Row {
             IconButton(onClick = onEdit) {
-                Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+                Icon(imageVector = Icons.Rounded.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
             }
             IconButton(onClick = onDelete) {
-                Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                Icon(imageVector = Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
             }
         }
     }

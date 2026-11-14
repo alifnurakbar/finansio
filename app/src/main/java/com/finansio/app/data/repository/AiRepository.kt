@@ -134,6 +134,45 @@ class AiRepository(private val apiService: GroqApiService) {
         }
     }
 
+    /** Saran singkat saat pengeluaran sebuah kategori mendekati/melewati anggarannya. */
+    suspend fun generateBudgetAdvice(
+        categoryName: String,
+        spent: Long,
+        limit: Long,
+        percent: Int,
+        daysLeft: Int
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val systemPrompt = """
+                Kamu adalah asisten keuangan pribadi yang ramah. Beri SATU saran singkat dan konkret
+                dalam Bahasa Indonesia santai (maksimal 2 kalimat, maksimal 220 karakter) untuk
+                pengguna yang pengeluaran kategorinya mendekati atau melewati anggaran.
+                Sebutkan sisa uang per hari bila masih ada sisa. Tanpa markdown, tanpa emoji berlebihan.
+            """.trimIndent()
+            val userPrompt = """
+                Kategori: $categoryName
+                Terpakai: Rp$spent dari anggaran Rp$limit ($percent%)
+                Sisa hari di bulan ini: $daysLeft
+            """.trimIndent()
+
+            val request = GroqChatRequest(
+                messages = listOf(
+                    GroqMessage(role = "system", content = systemPrompt),
+                    GroqMessage(role = "user", content = userPrompt)
+                ),
+                responseFormat = null,
+                temperature = 0.6,
+                maxTokens = 1024
+            )
+            val content = apiService.createChatCompletion(request)
+                .choices.firstOrNull()?.message?.content?.trim()
+            if (content.isNullOrBlank()) Result.failure(Exception("Tidak ada respons dari AI"))
+            else Result.success(content)
+        } catch (e: Exception) {
+            Result.failure(Exception(friendlyAiError(e), e))
+        }
+    }
+
     suspend fun generateCashflowInsight(insightPrompt: String): Result<String> =
         withContext(Dispatchers.IO) {
             try {

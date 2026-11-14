@@ -3,9 +3,9 @@ package com.finansio.app.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,7 +38,7 @@ fun AddTransactionBottomSheet(
             ListItem(
                 headlineContent = { Text("Input Manual") },
                 leadingContent = {
-                    Icon(Icons.Default.Edit, contentDescription = "Manual")
+                    Icon(Icons.Rounded.Edit, contentDescription = "Manual")
                 },
                 modifier = Modifier.clickable {
                     onDismissRequest()
@@ -49,7 +49,7 @@ fun AddTransactionBottomSheet(
             ListItem(
                 headlineContent = { Text("Scan Struk (AI)") },
                 leadingContent = {
-                    Icon(Icons.Default.CameraAlt, contentDescription = "Scan Struk")
+                    Icon(Icons.Rounded.CameraAlt, contentDescription = "Scan Struk")
                 },
                 modifier = Modifier.clickable {
                     onDismissRequest()
@@ -60,7 +60,7 @@ fun AddTransactionBottomSheet(
             ListItem(
                 headlineContent = { Text("Rekam Suara (AI)") },
                 leadingContent = {
-                    Icon(Icons.Default.Mic, contentDescription = "Rekam Suara")
+                    Icon(Icons.Rounded.Mic, contentDescription = "Rekam Suara")
                 },
                 modifier = Modifier.clickable {
                     onDismissRequest()

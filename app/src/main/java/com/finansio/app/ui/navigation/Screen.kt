@@ -9,4 +9,6 @@ sealed class Screen(val route: String) {
         fun createRoute(id: Int? = null) = "transaction_form/${id ?: -1}"
     }
     object ScanResult : Screen("scan_result")
+    object Budget : Screen("budget")
+    object Profile : Screen("profile")
 }

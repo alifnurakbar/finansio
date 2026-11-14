@@ -13,6 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.innerShadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import com.finansio.app.data.budget.BudgetAlert
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Error
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.ui.text.font.FontWeight
 import com.finansio.app.ui.components.EmptyStateView
 import com.finansio.app.ui.components.FinansioCard
 import com.finansio.app.ui.components.MonthNavigatorBar
@@ -31,7 +37,11 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     monthFilterViewModel: MonthFilterViewModel,
     onNavigateToTransaction: (Int) -> Unit,
-    onNavigateToHistory: () -> Unit
+    onNavigateToHistory: () -> Unit,
+    userName: String = "",
+    budgetAlerts: List<BudgetAlert> = emptyList(),
+    onDismissAlert: (BudgetAlert) -> Unit = {},
+    onAlertClick: () -> Unit = {}
 ) {
     val transactions by viewModel.transactions.collectAsState()
     val balance by viewModel.balance.collectAsState()
@@ -48,6 +58,23 @@ fun HomeScreen(
                 .padding(paddingValues = padding)
                 .padding(16.dp)
         ) {
+            Text(
+                text = if (userName.isBlank()) "Halo! 👋" else "Halo, $userName! 👋",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Yuk cek keuanganmu hari ini",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            budgetAlerts.forEach { alert ->
+                BudgetAlertBanner(alert, onClick = onAlertClick, onDismiss = { onDismissAlert(alert) })
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
             FinansioCard(modifier = Modifier.fillMaxWidth()) {
                 MonthNavigatorBar(
                     label = DateUtils.formatMonthYear(selectedMonth.year, selectedMonth.month),
@@ -131,7 +158,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             if (transactions.isEmpty()) {
-                EmptyStateView("Belum ada catatan bulan ini — yuk mulai catat")
+                EmptyStateView("Belum ada catatan bulan ini â yuk mulai catat")
             } else {
                 LazyColumn {
                     items(transactions) { tx ->
@@ -140,6 +167,56 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** Banner peringatan anggaran dengan saran AI. Kuning = mendekati batas, merah = terlampaui. */
+@Composable
+private fun BudgetAlertBanner(alert: BudgetAlert, onClick: () -> Unit, onDismiss: () -> Unit) {
+    val accent = if (alert.isOver) com.finansio.app.ui.theme.Coral else com.finansio.app.ui.theme.Yellow
+    androidx.compose.material3.Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = accent.copy(alpha = 0.12f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = 0.5f))
+    ) {
+        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
+            Icon(
+                imageVector = if (alert.isOver) androidx.compose.material.icons.Icons.Rounded.Error
+                else androidx.compose.material.icons.Icons.Rounded.Warning,
+                contentDescription = null,
+                tint = accent
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (alert.isOver) "Anggaran ${alert.categoryName} terlampaui (${alert.percent}%)"
+                    else "Anggaran ${alert.categoryName} sudah ${alert.percent}%",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = accent
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        androidx.compose.material.icons.Icons.Rounded.AutoAwesome,
+                        contentDescription = "Saran AI",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp).padding(top = 2.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(alert.message, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                Icon(
+                    androidx.compose.material.icons.Icons.Rounded.Close,
+                    contentDescription = "Tutup",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
     }

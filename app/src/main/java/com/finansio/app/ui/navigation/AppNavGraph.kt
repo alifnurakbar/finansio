@@ -20,6 +20,13 @@ import com.finansio.app.ui.scanner.ScanResultViewModel
 import com.finansio.app.ui.transaction.history.TransactionHistoryScreen
 import com.finansio.app.ui.transaction.history.TransactionHistoryViewModel
 import com.finansio.app.ui.MonthFilterViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.finansio.app.data.budget.BudgetAlertManager
+import com.finansio.app.data.settings.SettingsRepository
+import com.finansio.app.ui.budget.BudgetScreen
+import com.finansio.app.ui.budget.BudgetViewModel
+import com.finansio.app.ui.profile.ProfileScreen
 
 @Composable
 fun AppNavGraph(
@@ -30,13 +37,18 @@ fun AppNavGraph(
     transactionFormViewModel: TransactionFormViewModel,
     transactionHistoryViewModel: TransactionHistoryViewModel,
     scanResultViewModel: ScanResultViewModel,
-    monthFilterViewModel: MonthFilterViewModel
+    monthFilterViewModel: MonthFilterViewModel,
+    budgetViewModel: BudgetViewModel,
+    settingsRepository: SettingsRepository,
+    budgetAlertManager: BudgetAlertManager
 ) {
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route
     ) {
         composable(Screen.Home.route) {
+            val userName by settingsRepository.userName.collectAsState()
+            val budgetAlerts by budgetAlertManager.alerts.collectAsState()
             HomeScreen(
                 viewModel = homeViewModel,
                 monthFilterViewModel = monthFilterViewModel,
@@ -45,7 +57,11 @@ fun AppNavGraph(
                 },
                 onNavigateToHistory = {
                     navController.navigate(Screen.TransactionHistory.route)
-                }
+                },
+                userName = userName,
+                budgetAlerts = budgetAlerts,
+                onDismissAlert = budgetAlertManager::dismiss,
+                onAlertClick = { navController.navigateToTab(Screen.Budget.route) }
             )
         }
         composable(Screen.TransactionHistory.route) {
@@ -64,7 +80,7 @@ fun AppNavGraph(
             )
         }
         composable(Screen.Category.route) {
-            CategoryScreen(viewModel = categoryViewModel)
+            CategoryScreen(viewModel = categoryViewModel, onBack = { navController.popBackStack() })
         }
         composable(
             route = Screen.TransactionForm.route,
@@ -79,6 +95,16 @@ fun AppNavGraph(
                 onBack = { navController.popBackStack() }
             )
         }
+        composable(Screen.Budget.route) {
+            BudgetScreen(viewModel = budgetViewModel, monthFilterViewModel = monthFilterViewModel)
+        }
+        composable(Screen.Profile.route) {
+            ProfileScreen(
+                settingsRepository = settingsRepository,
+                onNavigateToCategories = { navController.navigate(Screen.Category.route) },
+                onNavigateToBudget = { navController.navigateToTab(Screen.Budget.route) }
+            )
+        }
         composable(Screen.ScanResult.route) {
             ScanResultScreen(
                 viewModel = scanResultViewModel,
@@ -89,5 +115,14 @@ fun AppNavGraph(
                 }
             )
         }
+    }
+}
+
+/** Pindah antar-tab menu bawah tanpa menumpuk riwayat layar. */
+fun NavHostController.navigateToTab(route: String) {
+    navigate(route) {
+        popUpTo(Screen.Home.route) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
     }
 }

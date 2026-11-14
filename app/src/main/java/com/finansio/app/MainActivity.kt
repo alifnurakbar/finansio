@@ -14,10 +14,17 @@ import android.speech.RecognizerIntent
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PieChart
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import com.finansio.app.ui.navigation.navigateToTab
 import androidx.compose.material3.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -49,8 +56,18 @@ class MainActivity : ComponentActivity() {
         val app = application as FinansioApplication
         // MonthFilterViewModel is created outside the factory so it's shared across screens
         val monthFilterViewModel = MonthFilterViewModel()
-        val factory = FinansioViewModelFactory(app.transactionRepository, app.categoryRepository, app.aiRepository, monthFilterViewModel)
-        
+        val factory = FinansioViewModelFactory(
+            app.transactionRepository, app.categoryRepository, app.aiRepository,
+            monthFilterViewModel, app.budgetRepository
+        )
+
+        // Android 13+: minta izin notifikasi untuk peringatan anggaran
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
+        }
+
         enableEdgeToEdge()
         setContent {
             FinansioTheme {
@@ -61,8 +78,10 @@ class MainActivity : ComponentActivity() {
                 val isBottomBarVisible = currentRoute in listOf(
                     Screen.Home.route,
                     Screen.Statistics.route,
-                    Screen.Category.route
+                    Screen.Budget.route,
+                    Screen.Profile.route
                 )
+                val budgetViewModel: com.finansio.app.ui.budget.BudgetViewModel = viewModel(factory = factory)
 
                 val categoryViewModel: com.finansio.app.ui.category.CategoryViewModel = viewModel(factory = factory)
                 val homeViewModel: com.finansio.app.ui.transaction.list.HomeViewModel = viewModel(factory = factory)
@@ -158,41 +177,46 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         if (isBottomBarVisible) {
+                            // Menu bawah: Home · Statistik · (+ Catat) · Anggaran · Profil
                             NavigationBar {
-                                NavigationBarItem(
-                                    selected = currentRoute == Screen.Home.route,
-                                    onClick = { navController.navigate(Screen.Home.route) { popUpTo(0) } },
-                                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                                    label = { Text("Home") }
+                                val tabs = listOf(
+                                    Triple(Screen.Home.route, "Home", Icons.Rounded.Home),
+                                    Triple(Screen.Statistics.route, "Statistik", Icons.Rounded.PieChart),
+                                    null, // tempat tombol Catat di tengah
+                                    Triple(Screen.Budget.route, "Anggaran", Icons.Rounded.AccountBalanceWallet),
+                                    Triple(Screen.Profile.route, "Profil", Icons.Rounded.Person)
                                 )
-                                NavigationBarItem(
-                                    selected = currentRoute == Screen.Statistics.route,
-                                    onClick = { navController.navigate(Screen.Statistics.route) { popUpTo(0) } },
-                                    icon = { Icon(Icons.Default.PieChart, contentDescription = "Statistik") },
-                                    label = { Text("Statistik") }
-                                )
-                                NavigationBarItem(
-                                    selected = currentRoute == Screen.Category.route,
-                                    onClick = { navController.navigate(Screen.Category.route) { popUpTo(0) } },
-                                    icon = { Icon(Icons.Default.List, contentDescription = "Kategori") },
-                                    label = { Text("Kategori") }
-                                )
-                            }
-                        }
-                    },
-                    floatingActionButton = {
-                        if (isBottomBarVisible) {
-                            FloatingActionButton(
-                                onClick = { 
-                                    if (currentRoute == Screen.Category.route) {
-                                        categoryViewModel.triggerAddCategory()
+                                tabs.forEach { tab ->
+                                    if (tab == null) {
+                                        Box(
+                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            FloatingActionButton(
+                                                onClick = { showBottomSheet = true },
+                                                shape = CircleShape,
+                                                containerColor = MaterialTheme.colorScheme.primary,
+                                                elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp),
+                                                modifier = Modifier.size(56.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.Add,
+                                                    contentDescription = "Catat transaksi",
+                                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                                    modifier = Modifier.size(30.dp)
+                                                )
+                                            }
+                                        }
                                     } else {
-                                        showBottomSheet = true
+                                        val (route, label, icon) = tab
+                                        NavigationBarItem(
+                                            selected = currentRoute == route,
+                                            onClick = { navController.navigateToTab(route) },
+                                            icon = { Icon(icon, contentDescription = label) },
+                                            label = { Text(label) }
+                                        )
                                     }
-                                },
-                                containerColor = MaterialTheme.colorScheme.primary
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = if (currentRoute == Screen.Category.route) "Tambah Kategori" else "Catat", tint = MaterialTheme.colorScheme.onPrimary)
+                                }
                             }
                         }
                     }
@@ -209,7 +233,10 @@ class MainActivity : ComponentActivity() {
                             transactionFormViewModel = transactionFormViewModel,
                             transactionHistoryViewModel = transactionHistoryViewModel,
                             scanResultViewModel = scanResultViewModel,
-                            monthFilterViewModel = monthFilterViewModel
+                            monthFilterViewModel = monthFilterViewModel,
+                            budgetViewModel = budgetViewModel,
+                            settingsRepository = app.settingsRepository,
+                            budgetAlertManager = app.budgetAlertManager
                         )
                     }
                 }

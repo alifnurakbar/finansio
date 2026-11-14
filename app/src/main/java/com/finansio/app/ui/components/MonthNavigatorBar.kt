@@ -5,8 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,7 +43,7 @@ fun MonthNavigatorBar(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.ChevronLeft,
+                imageVector = Icons.Rounded.ChevronLeft,
                 contentDescription = "Bulan Sebelumnya",
                 tint = TextSecondary,
                 modifier = Modifier.size(20.dp)
@@ -68,7 +68,7 @@ fun MonthNavigatorBar(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.ChevronRight,
+                imageVector = Icons.Rounded.ChevronRight,
                 contentDescription = "Bulan Berikutnya",
                 tint = TextSecondary,
                 modifier = Modifier.size(20.dp)
