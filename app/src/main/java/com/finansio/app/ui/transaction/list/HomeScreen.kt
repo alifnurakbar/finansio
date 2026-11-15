@@ -174,7 +174,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             if (transactions.isEmpty()) {
-                EmptyStateView("Belum ada catatan bulan ini â yuk mulai catat")
+                EmptyStateView("Belum ada catatan bulan ini — yuk mulai catat")
             } else {
                 transactions.forEach { tx ->
                         Box(modifier = Modifier.clickable { onNavigateToTransaction(tx.id) }) {
