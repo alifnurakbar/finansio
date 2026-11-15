@@ -11,11 +11,25 @@ val localProperties = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
-// Tulis GROQ_API_KEY dari local.properties ke GroqSecrets.kt (masuk .gitignore).
+// Apakah perintah build ini untuk APK release (misalnya assembleRelease)?
+val isReleaseBuild = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+
+// Tulis API key Groq dari local.properties ke GroqSecrets.kt (masuk .gitignore).
 // Dipakai sebagai pengganti BuildConfig supaya editor selain Android Studio
 // (misalnya VS Code) juga bisa membaca nilainya tanpa tanda merah.
+// - Build debug   : GROQ_API_KEY (key pengembangan)
+// - Build release : GROQ_API_KEY_RELEASE (key khusus APK yang dibagikan publik,
+//                   bisa dihapus di console.groq.com tanpa mengganggu key utama)
 run {
-    val apiKey = localProperties.getProperty("GROQ_API_KEY", "")
+    val keyName = if (isReleaseBuild) "GROQ_API_KEY_RELEASE" else "GROQ_API_KEY"
+    val rawKey = localProperties.getProperty(keyName, "")
+    if (isReleaseBuild && rawKey.isBlank()) {
+        throw GradleException(
+            "GROQ_API_KEY_RELEASE belum diisi di local.properties. " +
+                "Buat key khusus release di console.groq.com agar key utama tidak ikut tersebar di APK."
+        )
+    }
+    val apiKey = rawKey
         .replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$")
     val secretsFile = file("src/main/java/com/finansio/app/data/remote/GroqSecrets.kt")
     val content = """
@@ -45,14 +59,30 @@ android {
         applicationId = "com.finansio.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Kunci tanda tangan APK release. Lokasi dan kata sandinya dibaca dari local.properties
+    // (RELEASE_STORE_FILE, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD),
+    // sehingga tidak pernah ikut ter-commit ke GitHub.
+    val releaseStoreFile = localProperties.getProperty("RELEASE_STORE_FILE")
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

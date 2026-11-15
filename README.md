@@ -18,6 +18,18 @@ Pengembangan lanjutan, penyesuaian, dan penelitian untuk skripsi dilakukan oleh 
 
 ---
 
+## 📥 Unduh Aplikasi
+
+APK siap pasang tersedia di halaman **[Releases](https://github.com/alifnurakbar/finansio/releases/latest)**.
+
+1. Unduh file `Finansio-v1.0.0.apk` di HP Android (minimal Android 7.0).
+2. Buka file tersebut. Jika diminta, izinkan **"Instal aplikasi tidak dikenal"** untuk browser atau file manager yang dipakai.
+3. Tekan **Instal**, lalu buka Finansio.
+
+Fitur AI membutuhkan koneksi internet.
+
+---
+
 ## 🚀 Fitur Aplikasi
 
 ### 📒 Pencatatan
@@ -240,6 +252,17 @@ GROQ_API_KEY=isi_api_key_groq_anda
 
 ### 4. Build & Run
 Jalankan di emulator atau HP Android (USB Debugging aktif) dengan tombol **Run 'app'** atau `Shift + F10`.
+
+### 5. (Opsional) Membuat APK release
+Tambahkan ke `local.properties`:
+```properties
+GROQ_API_KEY_RELEASE=key_groq_khusus_release
+RELEASE_STORE_FILE=lokasi/keystore.jks
+RELEASE_STORE_PASSWORD=...
+RELEASE_KEY_ALIAS=...
+RELEASE_KEY_PASSWORD=...
+```
+Lalu jalankan `./gradlew assembleRelease`. APK release otomatis memakai `GROQ_API_KEY_RELEASE`, bukan key pengembangan, dan build akan ditolak jika key release belum diisi.
 
 Saat pertama kali dibuka, isi nama Anda di **Profil**, lalu atur anggaran di menu **Anggaran**.
 
