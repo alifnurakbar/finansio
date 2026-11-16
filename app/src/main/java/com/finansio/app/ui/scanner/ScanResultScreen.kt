@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.sp
 import com.finansio.app.ui.theme.*
 import com.finansio.app.util.CurrencyFormatter.formatRupiah
 import com.finansio.app.data.local.entity.TransactionType
+import com.finansio.app.data.receipt.ReceiptChecker
+import com.finansio.app.data.receipt.TotalCheck
 
 /** Halaman hasil scan struk/suara: menampilkan item hasil AI untuk diperiksa, diubah, lalu disimpan sekaligus. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,7 +127,8 @@ fun ScanResultScreen(
         },
         bottomBar = {
             if (state is ScanUiState.Success) {
-                val items = (state as ScanUiState.Success).items
+                val success = state as ScanUiState.Success
+                val items = success.items
                 val total = items.sumOf { it.price * it.quantity }
                 Column(
                     modifier = Modifier
@@ -134,6 +137,15 @@ fun ScanResultScreen(
                         .navigationBarsPadding()
                         .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
+                    if (!isVoiceMode && items.isNotEmpty()) {
+                        TotalCheckBanner(
+                            check = ReceiptChecker.compare(total, success.receiptTotal),
+                            receiptTotal = success.receiptTotal,
+                            spreadNote = success.spreadNote,
+                            missingPrices = items.count { it.priceMissing }
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -381,10 +393,10 @@ fun ScannedItemCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 // Price
                 Text(
-                    text = formatRupiah(item.price * item.quantity),
+                    text = if (item.priceMissing) "Harga belum terbaca" else formatRupiah(item.price * item.quantity),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Coral
+                    color = if (item.priceMissing) Yellow else Coral
                 )
             }
 
@@ -583,7 +595,14 @@ fun EditItemBottomSheet(
             val quantity = quantityText.toIntOrNull()?.coerceAtLeast(1) ?: item.quantity
             Button(
                 onClick = {
-                    onSave(item.copy(name = name.trim().ifBlank { item.name }, price = price, quantity = quantity))
+                    onSave(
+                        item.copy(
+                            name = name.trim().ifBlank { item.name },
+                            price = price,
+                            quantity = quantity,
+                            priceMissing = item.priceMissing && price <= 0
+                        )
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(50),
@@ -592,6 +611,54 @@ fun EditItemBottomSheet(
             ) {
                 Text("Simpan Perubahan", fontWeight = FontWeight.Bold)
             }
+        }
+    }
+}
+
+/**
+ * Hasil pengecekan jumlah item terhadap TOTAL struk. Dihitung ulang setiap kali item diubah,
+ * jadi pengguna bisa melihat langsung apakah koreksinya sudah membuat angkanya cocok.
+ * Angka tidak pernah disesuaikan otomatis supaya cocok.
+ */
+@Composable
+fun TotalCheckBanner(
+    check: TotalCheck,
+    receiptTotal: Long?,
+    spreadNote: String?,
+    missingPrices: Int
+) {
+    val (color, message) = when (check) {
+        TotalCheck.Match -> Lime to "✓ Cocok dengan TOTAL struk"
+        TotalCheck.Unknown -> TextSecondary to "TOTAL struk tidak terbaca. Periksa harga item secara manual."
+        is TotalCheck.Mismatch -> {
+            val diff = formatRupiah(kotlin.math.abs(check.difference))
+            val direction = if (check.difference > 0) "lebih" else "kurang"
+            Yellow to "Jumlah item $direction $diff dari TOTAL struk ${formatRupiah(receiptTotal ?: 0)}. Periksa dan koreksi item yang salah."
+        }
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(color.copy(alpha = 0.12f))
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+    ) {
+        Text(message, color = color, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+        if (missingPrices > 0) {
+            Text(
+                "$missingPrices item belum ada harganya. Ketuk item untuk mengisi.",
+                color = Yellow,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+        if (spreadNote != null) {
+            Text(
+                spreadNote,
+                color = TextSecondary,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
     }
 }

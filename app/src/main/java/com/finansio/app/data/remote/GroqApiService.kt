@@ -9,4 +9,10 @@ interface GroqApiService {
     suspend fun createChatCompletion(
         @Body request: GroqChatRequest
     ): GroqChatResponse
+
+    /** Endpoint yang sama, tetapi pesan user berisi teks dan gambar (untuk scan struk). */
+    @POST("openai/v1/chat/completions")
+    suspend fun createVisionChatCompletion(
+        @Body request: GroqVisionChatRequest
+    ): GroqChatResponse
 }

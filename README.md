@@ -36,7 +36,7 @@ Fitur AI membutuhkan koneksi internet.
 | Fitur | Keterangan |
 |---|---|
 | Catat transaksi | Tambah, ubah, dan hapus pemasukan (*income*) dan pengeluaran (*outcome*) |
-| 📷 Scan struk (AI) | Foto struk → ML Kit membaca teks → LLM mengubahnya menjadi satu atau beberapa transaksi lengkap dengan kategori |
+| 📷 Scan struk (AI) | Foto struk dibaca langsung oleh model vision (dibantu teks ML Kit yang disusun per baris) → satu atau beberapa transaksi lengkap dengan kategori, plus pengecekan jumlah item terhadap TOTAL struk |
 | 🎤 Input suara (AI) | Ucapkan transaksi dalam Bahasa Indonesia, misalnya *"beli kopi 15 ribu dan bensin 50 ribu"*, lalu LLM memecahnya menjadi transaksi |
 | Riwayat transaksi | Daftar semua transaksi dengan pencarian |
 | Kategori | Tambah, ubah, dan hapus kategori beserta warnanya |
@@ -100,7 +100,7 @@ Fitur AI membutuhkan koneksi internet.
 | Jaringan | Retrofit + OkHttp |
 | Pemindaian & OCR | ML Kit Document Scanner, ML Kit Text Recognition v2 |
 | Pengenalan suara | Android `RecognizerIntent` (id-ID) |
-| LLM | [Groq API](https://console.groq.com), model `openai/gpt-oss-120b` |
+| LLM | [Groq API](https://console.groq.com), model `openai/gpt-oss-120b` (teks) dan `qwen/qwen3.8-27b` (foto struk, status Preview) |
 | Keamanan | AndroidX Biometric (sidik jari / kunci layar) |
 | Laporan | Android `PdfDocument`, CSV, `FileProvider` |
 | Notifikasi & penjadwalan | `NotificationCompat`, `AlarmManager` |
@@ -145,7 +145,8 @@ app/src/main/java/com/finansio/app/
 │   │   └── entity/            #   Tabel: transactions, categories, budgets
 │   ├── remote/                # Retrofit + Groq API (service, DTO, konstanta)
 │   ├── repository/            # TransactionRepository, CategoryRepository, BudgetRepository, AiRepository
-│   ├── model/                 # Model hasil parsing struk/suara dari AI
+│   ├── model/                 # Model hasil parsing suara dari AI
+│   ├── receipt/               # Pembacaan angka rupiah, baris OCR, dan pengecekan TOTAL struk
 │   ├── budget/                # BudgetAlertManager: peringatan anggaran 80%/100% + saran AI
 │   ├── chat/                  # FinanceContextBuilder: ringkasan data untuk Chat AI
 │   ├── export/                # ReportExporter: laporan PDF & CSV
@@ -185,8 +186,9 @@ Pengaturan ringan (nama, jam pengingat, status kunci, status peringatan anggaran
 ## 🔐 Privasi & Keamanan Data
 
 - Semua data keuangan disimpan **lokal di HP** (Room). Tidak ada server Finansio.
-- Yang dikirim ke Groq API hanya teks yang perlu diproses AI:
-  - **Scan struk / suara**: teks hasil OCR atau ucapan, plus daftar nama kategori.
+- Yang dikirim ke Groq API hanya data yang perlu diproses AI:
+  - **Scan struk**: **foto struk** (diperkecil, JPEG), teks hasil OCR, dan daftar nama kategori. Setiap scan butuh internet dan memakai kuota gambar Groq.
+  - **Input suara**: teks ucapan dan daftar nama kategori.
   - **Chat AI & Insight**: ringkasan angka (total per bulan dan per kategori), status anggaran, serta transaksi bulan ini berupa tanggal, jenis, kategori, dan nominal. **Nama pengguna dan catatan transaksi tidak dikirim.**
   - **Peringatan anggaran**: nama kategori, nominal terpakai, batas, dan sisa hari.
 - Riwayat Chat AI **tidak disimpan** dan hilang saat halaman chat ditutup.
@@ -212,6 +214,7 @@ Bagian ini mencatat pengembangan yang saya (Alif Nur Akbar) lakukan di luar star
 - **Bug scan struk**: daftar kategori sebelumnya selalu kosong saat dikirim ke AI, sehingga semua item tersimpan tanpa kategori. Sekarang kategori dibaca langsung dari database, ada kategori cadangan, dan layar hasil scan menampilkan tanggal simpan.
 - **Pesan error AI yang ramah pengguna** (HTTP 401/404/429, koneksi, timeout) dalam Bahasa Indonesia, dan batas waktu respons dinaikkan menjadi 60 detik.
 - **Keamanan API key**: key tidak lagi ditulis di kode sumber.
+- **Akurasi scan struk**: harga item sebelumnya sering Rp 0 atau dobel karena ML Kit membaca struk per kolom. Sekarang AI membaca foto struk langsung, teks OCR disusun ulang per baris, jawaban AI diperiksa ulang, dan layar hasil scan menunjukkan apakah jumlah item cocok dengan TOTAL struk. Lihat [ADR-012](docs/adr/ADR-012-akurasi-scan-struk.md).
 
 **Fitur baru**
 - **Anggaran per kategori** dengan migrasi database v1 → v2. Lihat [ADR-007](docs/adr/ADR-007-budget-per-category.md).
