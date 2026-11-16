@@ -7,7 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.finansio.app.data.local.entity.CategoryEntity
 import com.finansio.app.data.local.entity.TransactionEntity
 import com.finansio.app.data.local.entity.TransactionType
+import com.finansio.app.data.receipt.ReceiptChecker
 import com.finansio.app.data.repository.AiRepository
+import com.finansio.app.util.CurrencyFormatter.formatRupiah
 import com.finansio.app.data.repository.CategoryRepository
 import com.finansio.app.data.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +25,15 @@ sealed class ScanUiState {
     object Scanning : ScanUiState()
     data class OcrProcessing(val rawText: String = "") : ScanUiState()
     data class Parsing(val rawText: String) : ScanUiState()
-    data class Success(val items: List<ScannedItemUiModel>) : ScanUiState()
+    /**
+     * [receiptTotal] adalah TOTAL yang tercetak di struk (null untuk input suara atau bila tidak terbaca);
+     * layar membandingkannya dengan jumlah item. [spreadNote] menjelaskan pajak/diskon yang disebar ke item.
+     */
+    data class Success(
+        val items: List<ScannedItemUiModel>,
+        val receiptTotal: Long? = null,
+        val spreadNote: String? = null
+    ) : ScanUiState()
     data class Error(val message: String) : ScanUiState()
 }
 
@@ -57,8 +67,10 @@ class ScanResultViewModel(
             try {
                 _scanState.value = ScanUiState.OcrProcessing()
                 val rawText = ReceiptScannerHelper.recognizeText(context, imageUri)
-                
-                if (rawText.isBlank()) {
+                val imageBase64 = ReceiptScannerHelper.encodeImageForAi(context, imageUri)
+
+                // Tanpa teks OCR, scan masih bisa jalan dari foto. Berhenti hanya bila keduanya tidak ada.
+                if (rawText.isBlank() && imageBase64 == null) {
                     _scanState.value = ScanUiState.Error("Tidak ada teks yang terbaca dari gambar.")
                     return@launch
                 }
@@ -66,27 +78,33 @@ class ScanResultViewModel(
                 _scanState.value = ScanUiState.Parsing(rawText)
 
                 val currentCategories = loadCategories()
-                val result = aiRepository.parseReceiptText(rawText, currentCategories)
+                val result = aiRepository.parseReceipt(imageBase64, rawText, currentCategories)
 
-                result.onSuccess { parseResult ->
-                    val uiItems = parseResult.items.map { item ->
-                        val matchedCategory = currentCategories.find { 
-                            it.name.equals(item.suggestedCategory, ignoreCase = true) 
+                result.onSuccess { raw ->
+                    val receipt = ReceiptChecker.check(raw)
+                    val dateMillis = parseDateToMillis(receipt.date) ?: System.currentTimeMillis()
+                    val uiItems = receipt.items.map { item ->
+                        val matchedCategory = currentCategories.find {
+                            it.type == TransactionType.EXPENSE &&
+                                it.name.equals(item.suggestedCategory, ignoreCase = true)
                         } ?: fallbackCategory(currentCategories, TransactionType.EXPENSE)
-                        
-                        val dateMillis = parseDateToMillis(parseResult.date) ?: System.currentTimeMillis()
-                        
+
                         ScannedItemUiModel(
                             name = item.name,
-                            price = item.price,
+                            price = item.unitPrice,
                             quantity = item.quantity,
                             categoryId = matchedCategory?.id,
                             categoryName = matchedCategory?.name ?: "Lainnya",
-                            note = "${item.name} (${item.quantity}x) at ${parseResult.merchantName ?: "Toko"}",
-                            date = dateMillis
+                            note = "${item.name} (${item.quantity}x) at ${receipt.merchantName ?: "Toko"}",
+                            date = dateMillis,
+                            priceMissing = item.priceMissing
                         )
                     }
-                    _scanState.value = ScanUiState.Success(uiItems)
+                    val spreadNote = receipt.spreadAdjustments.takeIf { it.isNotEmpty() }?.let { list ->
+                        list.joinToString(", ") { "${it.label} ${formatRupiah(kotlin.math.abs(it.amount))}" } +
+                            " sudah dibagi ke harga item"
+                    }
+                    _scanState.value = ScanUiState.Success(uiItems, receipt.receiptTotal, spreadNote)
                 }.onFailure {
                     _scanState.value = ScanUiState.Error(it.message ?: "Gagal memproses struk dengan AI.")
                 }
@@ -151,7 +169,7 @@ class ScanResultViewModel(
         val currentState = _scanState.value
         if (currentState is ScanUiState.Success) {
             val newItems = currentState.items.filter { it.id != id }
-            _scanState.value = ScanUiState.Success(newItems)
+            _scanState.value = currentState.copy(items = newItems)
         }
     }
 
@@ -159,7 +177,7 @@ class ScanResultViewModel(
         val currentState = _scanState.value
         if (currentState is ScanUiState.Success) {
             val newItems = currentState.items.map { if (it.id == updated.id) updated else it }
-            _scanState.value = ScanUiState.Success(newItems)
+            _scanState.value = currentState.copy(items = newItems)
         }
     }
 

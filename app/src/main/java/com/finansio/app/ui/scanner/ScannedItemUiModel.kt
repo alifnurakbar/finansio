@@ -13,5 +13,7 @@ data class ScannedItemUiModel(
     val categoryName: String,
     val note: String? = null,
     val date: Long,
-    val type: TransactionType = TransactionType.EXPENSE
+    val type: TransactionType = TransactionType.EXPENSE,
+    /** True bila AI tidak menemukan harganya. Ditampilkan sebagai peringatan sampai pengguna mengisi harga. */
+    val priceMissing: Boolean = false
 )

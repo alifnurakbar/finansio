@@ -2,11 +2,17 @@ package com.finansio.app.data.repository
 
 import com.finansio.app.data.local.entity.CategoryEntity
 import com.finansio.app.data.local.entity.TransactionType
+import android.util.Log
 import com.finansio.app.data.model.ReceiptParseResult
+import com.finansio.app.data.receipt.RawReceipt
+import com.finansio.app.data.receipt.ReceiptJson
 import com.finansio.app.data.remote.GroqApiService
 import com.finansio.app.data.remote.GroqChatRequest
+import com.finansio.app.data.remote.GroqContentPart
 import com.finansio.app.data.remote.GroqMessage
 import com.finansio.app.data.remote.GroqResponseFormat
+import com.finansio.app.data.remote.GroqVisionChatRequest
+import com.finansio.app.data.remote.GroqVisionMessage
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import retrofit2.HttpException
@@ -21,58 +27,126 @@ class AiRepository(private val apiService: GroqApiService) {
     private companion object {
         // Jumlah pesan terakhir yang ikut dikirim sebagai konteks percakapan
         const val MAX_CHAT_TURNS = 10
+        const val TAG = "AiRepository"
     }
 
-    suspend fun parseReceiptText(
+    /**
+     * Membaca struk. Foto struk ([imageBase64], JPEG) dikirim ke model vision sebagai sumber utama,
+     * dengan teks OCR per baris sebagai bantuan. Bila model vision gagal atau sudah dihentikan,
+     * otomatis kembali ke model teks dengan teks OCR saja. Lihat ADR-012.
+     */
+    suspend fun parseReceipt(
+        imageBase64: String?,
         ocrText: String,
         categories: List<CategoryEntity>
-    ): Result<ReceiptParseResult> = withContext(Dispatchers.IO) {
-        try {
-            val expenseCategories = categories
-                .filter { it.type == TransactionType.EXPENSE }
-                .joinToString(", ") { it.name }
+    ): Result<RawReceipt> = withContext(Dispatchers.IO) {
+        val expenseCategories = categories
+            .filter { it.type == TransactionType.EXPENSE }
+            .joinToString(", ") { it.name }
 
-            val systemPrompt = """
-                Kamu adalah asisten keuangan. Analisis teks struk belanja berikut dan extract informasi dalam format JSON.
-
-                Kategori pengeluaran yang tersedia: [$expenseCategories]
-
-                Berikan output JSON DENGAN EXACT KEY BERIKUT (jangan tambah key lain):
-                {
-                  "merchant_name": "nama toko/merchant",
-                  "date": "YYYY-MM-DD",
-                  "items": [
-                    {
-                      "name": "nama item",
-                      "price": angka_tanpa_titik_koma,
-                      "quantity": jumlah,
-                      "suggested_category": "nama kategori dari list di atas yang paling cocok (harus sama persis dengan list, atau null jika tidak yakin)"
-                    }
-                  ],
-                  "total_amount": angka_total_tanpa_titik_koma
+        if (imageBase64 != null) {
+            try {
+                val request = GroqVisionChatRequest(
+                    messages = listOf(
+                        GroqMessage(role = "system", content = receiptPrompt(expenseCategories, withPhoto = true)),
+                        GroqVisionMessage(
+                            role = "user",
+                            content = listOf(
+                                GroqContentPart.text(ocrUserText(ocrText)),
+                                GroqContentPart.jpeg(imageBase64)
+                            )
+                        )
+                    )
+                )
+                val content = apiService.createVisionChatCompletion(request)
+                    .choices.firstOrNull()?.message?.content
+                if (!content.isNullOrBlank()) {
+                    return@withContext Result.success(ReceiptJson.parse(content))
                 }
-            """.trimIndent()
+                Log.w(TAG, "Model vision tidak memberi jawaban, beralih ke model teks")
+            } catch (e: Exception) {
+                if (!shouldFallBackToText(e)) {
+                    return@withContext Result.failure(Exception(friendlyAiError(e), e))
+                }
+                Log.w(TAG, "Model vision gagal, beralih ke model teks", e)
+            }
+        }
 
+        if (ocrText.isBlank()) {
+            return@withContext Result.failure(Exception("Tidak ada teks yang terbaca dari gambar."))
+        }
+        try {
             val request = GroqChatRequest(
                 messages = listOf(
-                    GroqMessage(role = "system", content = systemPrompt),
-                    GroqMessage(role = "user", content = "Teks struk:\n---\n$ocrText\n---")
+                    GroqMessage(role = "system", content = receiptPrompt(expenseCategories, withPhoto = false)),
+                    GroqMessage(role = "user", content = ocrUserText(ocrText))
                 ),
-                responseFormat = GroqResponseFormat()
+                responseFormat = GroqResponseFormat(),
+                temperature = 0.1
             )
-
-            val response = apiService.createChatCompletion(request)
-            val jsonContent = response.choices.firstOrNull()?.message?.content
-            
-            if (jsonContent != null) {
-                val parsedResult = gson.fromJson(jsonContent, ReceiptParseResult::class.java)
-                Result.success(parsedResult)
-            } else {
-                Result.failure(Exception("Failed to get content from Groq API"))
-            }
+            val content = apiService.createChatCompletion(request).choices.firstOrNull()?.message?.content
+            if (content.isNullOrBlank()) Result.failure(Exception("AI tidak memberikan jawaban. Coba scan ulang."))
+            else Result.success(ReceiptJson.parse(content))
         } catch (e: Exception) {
             Result.failure(Exception(friendlyAiError(e), e))
         }
+    }
+
+    /**
+     * Kapan kegagalan model vision boleh dicoba ulang dengan model teks. Tidak untuk API key salah
+     * (model teks juga akan gagal) atau tidak ada internet.
+     */
+    private fun shouldFallBackToText(e: Exception): Boolean = when (e) {
+        is HttpException -> e.code() != 401 && e.code() != 403
+        is IOException -> false
+        else -> true // JSON rusak, jawaban tidak lengkap, dll.
+    }
+
+    private fun ocrUserText(ocrText: String): String =
+        if (ocrText.isBlank()) "Teks OCR: (tidak ada)"
+        else "Teks OCR (disusun per baris menurut posisi, bisa salah baca):\n---\n$ocrText\n---"
+
+    private fun receiptPrompt(expenseCategories: String, withPhoto: Boolean): String {
+        val source = if (withPhoto) {
+            "Sumber utama adalah FOTO struk. Teks OCR hanya bantuan dan bisa salah baca; bila berbeda dengan foto, ikuti foto."
+        } else {
+            "Kamu hanya menerima teks OCR. Teks sudah disusun per baris menurut posisinya di struk, jadi nama barang dan harganya biasanya berada di baris yang sama."
+        }
+        return """
+            Kamu membaca struk belanja Indonesia dan mengubahnya menjadi JSON.
+            $source
+
+            Aturan:
+            1. Satu item = satu barang atau jasa yang dibeli. Untuk setiap item isi terpisah:
+               - quantity: jumlah barang (1 jika tidak tertulis)
+               - unit_price: harga satuan
+               - line_total: subtotal baris yang tercetak di struk (biasanya angka paling kanan) = quantity x unit_price
+               Jika struk hanya mencetak satu angka untuk item itu, isi line_total dengan angka tersebut dan unit_price null.
+            2. Baris ringkasan BUKAN item: SUBTOTAL, TOTAL, GRAND TOTAL, BAYAR, TUNAI, CASH, DEBIT, QRIS, KEMBALI,
+               KEMBALIAN, PPN, PAJAK, PB1, SERVICE, DISKON, POTONGAN, PEMBULATAN. Masukkan angkanya ke field ringkasan di bawah.
+            3. Format angka Indonesia: titik adalah pemisah ribuan. "27.500" = 27500, "1.250.000" = 1250000.
+               Tulis semua angka sebagai bilangan bulat rupiah tanpa titik atau koma, contoh 27500.
+            4. Jika harga suatu item benar-benar tidak terbaca, isi null. Jangan mengisi 0 dan jangan menebak.
+            5. total_amount adalah angka TOTAL yang harus dibayar, bukan uang BAYAR/TUNAI dan bukan KEMBALI.
+            6. discount adalah jumlah semua potongan sebagai angka positif. rounding boleh negatif.
+            7. suggested_category harus sama persis dengan salah satu dari [$expenseCategories], atau null.
+            8. date diambil dari struk dengan format YYYY-MM-DD, atau null jika tidak ada.
+
+            Jawab HANYA dengan JSON dengan key persis berikut:
+            {
+              "merchant_name": string atau null,
+              "date": "YYYY-MM-DD" atau null,
+              "items": [
+                {"name": string, "quantity": angka, "unit_price": angka atau null, "line_total": angka atau null, "suggested_category": string atau null}
+              ],
+              "subtotal": angka atau null,
+              "tax": angka atau null,
+              "service_charge": angka atau null,
+              "discount": angka atau null,
+              "rounding": angka atau null,
+              "total_amount": angka atau null
+            }
+        """.trimIndent()
     }
 
     suspend fun parseVoiceText(
