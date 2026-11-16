@@ -23,7 +23,8 @@ sealed class ScanUiState {
     object Scanning : ScanUiState()
     data class OcrProcessing(val rawText: String = "") : ScanUiState()
     data class Parsing(val rawText: String) : ScanUiState()
-    data class Success(val items: List<ScannedItemUiModel>) : ScanUiState()
+    /** [printedTotal] = TOTAL yang tercetak di struk (null untuk input suara atau bila tidak terbaca). */
+    data class Success(val items: List<ScannedItemUiModel>, val printedTotal: Long? = null) : ScanUiState()
     data class Error(val message: String) : ScanUiState()
 }
 
@@ -56,37 +57,42 @@ class ScanResultViewModel(
         viewModelScope.launch {
             try {
                 _scanState.value = ScanUiState.OcrProcessing()
-                val rawText = ReceiptScannerHelper.recognizeText(context, imageUri)
-                
-                if (rawText.isBlank()) {
+                // OCR yang gagal tidak menghentikan proses: model vision masih bisa membaca fotonya.
+                val layoutText = runCatching { ReceiptScannerHelper.recognizeText(context, imageUri) }
+                    .getOrDefault("")
+                val imageBase64 = ReceiptScannerHelper.encodeImageForAi(context, imageUri)
+
+                if (layoutText.isBlank() && imageBase64 == null) {
                     _scanState.value = ScanUiState.Error("Tidak ada teks yang terbaca dari gambar.")
                     return@launch
                 }
 
-                _scanState.value = ScanUiState.Parsing(rawText)
+                _scanState.value = ScanUiState.Parsing(
+                    layoutText.ifBlank { "(OCR tidak menemukan teks, AI membaca langsung dari foto struk)" }
+                )
 
                 val currentCategories = loadCategories()
-                val result = aiRepository.parseReceiptText(rawText, currentCategories)
+                val result = aiRepository.parseReceipt(imageBase64, layoutText, currentCategories)
 
-                result.onSuccess { parseResult ->
-                    val uiItems = parseResult.items.map { item ->
-                        val matchedCategory = currentCategories.find { 
-                            it.name.equals(item.suggestedCategory, ignoreCase = true) 
+                result.onSuccess { receipt ->
+                    val dateMillis = parseDateToMillis(receipt.date) ?: System.currentTimeMillis()
+                    val uiItems = receipt.lines.map { line ->
+                        val matchedCategory = currentCategories.find {
+                            it.type == TransactionType.EXPENSE &&
+                                it.name.equals(line.suggestedCategory, ignoreCase = true)
                         } ?: fallbackCategory(currentCategories, TransactionType.EXPENSE)
-                        
-                        val dateMillis = parseDateToMillis(parseResult.date) ?: System.currentTimeMillis()
-                        
+
                         ScannedItemUiModel(
-                            name = item.name,
-                            price = item.price,
-                            quantity = item.quantity,
+                            name = line.name,
+                            price = line.unitPrice,
+                            quantity = line.quantity,
                             categoryId = matchedCategory?.id,
                             categoryName = matchedCategory?.name ?: "Lainnya",
-                            note = "${item.name} (${item.quantity}x) at ${parseResult.merchantName ?: "Toko"}",
+                            note = "${line.name} (${line.quantity}x) at ${receipt.merchantName ?: "Toko"}",
                             date = dateMillis
                         )
                     }
-                    _scanState.value = ScanUiState.Success(uiItems)
+                    _scanState.value = ScanUiState.Success(uiItems, receipt.printedTotal)
                 }.onFailure {
                     _scanState.value = ScanUiState.Error(it.message ?: "Gagal memproses struk dengan AI.")
                 }
@@ -150,16 +156,16 @@ class ScanResultViewModel(
     fun removeItem(id: String) {
         val currentState = _scanState.value
         if (currentState is ScanUiState.Success) {
-            val newItems = currentState.items.filter { it.id != id }
-            _scanState.value = ScanUiState.Success(newItems)
+            _scanState.value = currentState.copy(items = currentState.items.filter { it.id != id })
         }
     }
 
     fun updateItem(updated: ScannedItemUiModel) {
         val currentState = _scanState.value
         if (currentState is ScanUiState.Success) {
-            val newItems = currentState.items.map { if (it.id == updated.id) updated else it }
-            _scanState.value = ScanUiState.Success(newItems)
+            _scanState.value = currentState.copy(
+                items = currentState.items.map { if (it.id == updated.id) updated else it }
+            )
         }
     }
 
@@ -188,7 +194,7 @@ class ScanResultViewModel(
     private fun parseDateToMillis(dateStr: String?): Long? {
         if (dateStr == null) return null
         return try {
-            val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val format = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
             format.parse(dateStr)?.time
         } catch (e: Exception) {
             null

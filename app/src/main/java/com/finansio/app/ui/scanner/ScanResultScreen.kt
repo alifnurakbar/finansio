@@ -280,6 +280,11 @@ fun ScanResultScreen(
                                     )
                                 }
                             }
+                            currentState.printedTotal?.let { printedTotal ->
+                                item(key = "receipt-total-check") {
+                                    ReceiptTotalCheck(items = currentState.items, printedTotal = printedTotal)
+                                }
+                            }
                             items(currentState.items, key = { it.id }) { item ->
                                 ScannedItemCard(
                                     item = item,
@@ -636,6 +641,43 @@ fun ScanEmptyView() {
             Text("Tidak Ada Item", color = TextPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Text("AI tidak bisa mendeteksi item dari struk ini.", color = TextSecondary, textAlign = TextAlign.Center)
+        }
+    }
+}
+
+/**
+ * Membandingkan jumlah semua item dengan TOTAL yang tercetak di struk, supaya pengguna langsung
+ * tahu bila ada harga yang salah baca. Ikut berubah saat item diedit atau dihapus.
+ */
+@Composable
+private fun ReceiptTotalCheck(items: List<ScannedItemUiModel>, printedTotal: Long) {
+    val itemsTotal = items.sumOf { it.price * it.quantity }
+    val difference = itemsTotal - printedTotal
+    val matches = difference == 0L
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background((if (matches) Lime else Coral).copy(alpha = 0.12f))
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+    ) {
+        if (matches) {
+            Text(
+                text = "✓ Cocok dengan TOTAL struk ${formatRupiah(printedTotal)}",
+                color = Lime,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodySmall
+            )
+        } else {
+            val direction = if (difference > 0) "lebih" else "kurang"
+            Text(
+                text = "⚠ Jumlah item ${formatRupiah(itemsTotal)}, TOTAL struk ${formatRupiah(printedTotal)}. " +
+                    "Selisih ${formatRupiah(kotlin.math.abs(difference))} ($direction). " +
+                    "Cek lagi harga atau jumlah item, lalu ketuk ikon pensil untuk mengoreksi.",
+                color = Coral,
+                style = MaterialTheme.typography.bodySmall,
+                lineHeight = 18.sp
+            )
         }
     }
 }

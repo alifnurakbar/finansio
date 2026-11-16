@@ -18,3 +18,4 @@ Catatan keputusan teknis proyek Finansio.
 | [009](ADR-009-ai-finance-chat.md) | Chat Asisten Keuangan AI dan privasi data |
 | [010](ADR-010-export-reminder-lock-backup.md) | Ekspor laporan, pengingat harian, kunci sidik jari, backup & restore |
 | [011](ADR-011-custom-statistics-charts.md) | Grafik statistik kustom + hasil validasi palet |
+| [012](ADR-012-akurasi-scan-struk.md) | Akurasi scan struk: model vision + pemeriksaan TOTAL |

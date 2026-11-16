@@ -8,4 +8,7 @@ object GroqApiConstants {
     const val API_KEY: String = GroqSecrets.GROQ_API_KEY
     // llama-3.3-70b-versatile sudah dihentikan Groq (HTTP 404 model_not_found)
     const val MODEL = "openai/gpt-oss-120b"
+    // Model vision untuk scan struk: membaca langsung dari foto, bukan hanya dari teks OCR.
+    // Masih berstatus Preview di Groq. Jika dihentikan, scan otomatis kembali ke MODEL + teks OCR.
+    const val VISION_MODEL = "qwen/qwen3.8-27b"
 }

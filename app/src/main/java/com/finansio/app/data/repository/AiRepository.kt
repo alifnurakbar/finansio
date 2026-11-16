@@ -6,7 +6,15 @@ import com.finansio.app.data.model.ReceiptParseResult
 import com.finansio.app.data.remote.GroqApiService
 import com.finansio.app.data.remote.GroqChatRequest
 import com.finansio.app.data.remote.GroqMessage
+import com.finansio.app.data.remote.GroqContentPart
 import com.finansio.app.data.remote.GroqResponseFormat
+import com.finansio.app.data.remote.GroqVisionMessage
+import com.finansio.app.data.remote.GroqVisionRequest
+import com.finansio.app.data.scanner.ReceiptJsonReader
+import com.finansio.app.data.scanner.ReceiptPrompt
+import com.finansio.app.data.scanner.ReceiptReconciler
+import com.finansio.app.data.scanner.ReconciledReceipt
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import retrofit2.HttpException
@@ -19,57 +27,70 @@ class AiRepository(private val apiService: GroqApiService) {
     private val gson = Gson()
 
     private companion object {
+        const val TAG = "AiRepository"
         // Jumlah pesan terakhir yang ikut dikirim sebagai konteks percakapan
         const val MAX_CHAT_TURNS = 10
     }
 
-    suspend fun parseReceiptText(
-        ocrText: String,
+    /**
+     * Membaca struk belanja. Utamakan model vision (melihat foto struk + teks OCR per baris).
+     * Bila model vision gagal (misalnya dihentikan Groq atau batas pemakaian habis), otomatis
+     * kembali ke model teks dengan teks OCR per baris. Hasil AI selalu diperiksa ulang oleh
+     * [ReceiptReconciler] supaya jumlah item cocok dengan TOTAL struk.
+     */
+    suspend fun parseReceipt(
+        imageBase64: String?,
+        ocrLayoutText: String,
         categories: List<CategoryEntity>
-    ): Result<ReceiptParseResult> = withContext(Dispatchers.IO) {
-        try {
-            val expenseCategories = categories
-                .filter { it.type == TransactionType.EXPENSE }
-                .joinToString(", ") { it.name }
+    ): Result<ReconciledReceipt> = withContext(Dispatchers.IO) {
+        val expenseCategories = categories
+            .filter { it.type == TransactionType.EXPENSE }
+            .joinToString(", ") { it.name }
 
-            val systemPrompt = """
-                Kamu adalah asisten keuangan. Analisis teks struk belanja berikut dan extract informasi dalam format JSON.
+        var lastError: Exception? = null
 
-                Kategori pengeluaran yang tersedia: [$expenseCategories]
-
-                Berikan output JSON DENGAN EXACT KEY BERIKUT (jangan tambah key lain):
-                {
-                  "merchant_name": "nama toko/merchant",
-                  "date": "YYYY-MM-DD",
-                  "items": [
-                    {
-                      "name": "nama item",
-                      "price": angka_tanpa_titik_koma,
-                      "quantity": jumlah,
-                      "suggested_category": "nama kategori dari list di atas yang paling cocok (harus sama persis dengan list, atau null jika tidak yakin)"
-                    }
-                  ],
-                  "total_amount": angka_total_tanpa_titik_koma
+        if (imageBase64 != null) {
+            try {
+                val request = GroqVisionRequest(
+                    messages = listOf(
+                        GroqVisionMessage(
+                            role = "user",
+                            content = listOf(
+                                GroqContentPart.text(ReceiptPrompt.visionUserText(expenseCategories, ocrLayoutText)),
+                                GroqContentPart.jpegBase64(imageBase64)
+                            )
+                        )
+                    )
+                )
+                val content = apiService.createVisionCompletion(request).choices.firstOrNull()?.message?.content
+                if (content != null) {
+                    val receipt = ReceiptReconciler.reconcile(ReceiptJsonReader.read(content))
+                    if (receipt.lines.isNotEmpty()) return@withContext Result.success(receipt)
                 }
-            """.trimIndent()
+            } catch (e: Exception) {
+                Log.w(TAG, "Model vision gagal, beralih ke teks OCR", e)
+                lastError = e
+            }
+        }
 
+        if (ocrLayoutText.isBlank()) {
+            return@withContext Result.failure(
+                Exception(lastError?.let { friendlyAiError(it) } ?: "Tidak ada teks yang terbaca dari gambar.", lastError)
+            )
+        }
+
+        try {
             val request = GroqChatRequest(
                 messages = listOf(
-                    GroqMessage(role = "system", content = systemPrompt),
-                    GroqMessage(role = "user", content = "Teks struk:\n---\n$ocrText\n---")
+                    GroqMessage(role = "system", content = ReceiptPrompt.instructions(expenseCategories)),
+                    GroqMessage(role = "user", content = ReceiptPrompt.textOnlyUserText(ocrLayoutText))
                 ),
-                responseFormat = GroqResponseFormat()
+                responseFormat = GroqResponseFormat(),
+                temperature = 0.1
             )
-
-            val response = apiService.createChatCompletion(request)
-            val jsonContent = response.choices.firstOrNull()?.message?.content
-            
-            if (jsonContent != null) {
-                val parsedResult = gson.fromJson(jsonContent, ReceiptParseResult::class.java)
-                Result.success(parsedResult)
-            } else {
-                Result.failure(Exception("Failed to get content from Groq API"))
-            }
+            val content = apiService.createChatCompletion(request).choices.firstOrNull()?.message?.content
+                ?: return@withContext Result.failure(Exception("AI tidak memberikan jawaban. Coba scan ulang."))
+            Result.success(ReceiptReconciler.reconcile(ReceiptJsonReader.read(content)))
         } catch (e: Exception) {
             Result.failure(Exception(friendlyAiError(e), e))
         }
