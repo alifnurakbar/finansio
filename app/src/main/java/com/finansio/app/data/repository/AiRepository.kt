@@ -110,11 +110,21 @@ class AiRepository(private val apiService: GroqApiService) {
         val source = if (withPhoto) {
             "Sumber utama adalah FOTO struk. Teks OCR hanya bantuan dan bisa salah baca; bila berbeda dengan foto, ikuti foto."
         } else {
-            "Kamu hanya menerima teks OCR. Teks sudah disusun per baris menurut posisinya di struk, jadi nama barang dan harganya biasanya berada di baris yang sama."
+            "Kamu hanya menerima teks OCR. Teks sudah disusun per baris menurut posisinya di struk."
         }
+        val twoLineHint = """
+            Banyak struk mencetak SATU barang dalam DUA baris: baris pertama nama barang, baris berikutnya
+            jumlah, satuan, harga satuan, dan subtotal. Contoh:
+              TOTOLE 200G
+              2 PCS X  27.500  55.000
+            Ini SATU item: name "TOTOLE 200G", quantity 2, unit_price 27500, line_total 55000.
+            Baris seperti "2 PCS X", "1 RTGx", "4 PCS", "RTG" adalah jumlah dan satuan, BUKAN nama barang.
+        """.trimIndent()
         return """
             Kamu membaca struk belanja Indonesia dan mengubahnya menjadi JSON.
             $source
+
+            {{TWO_LINE_HINT}}
 
             Aturan:
             1. Satu item = satu barang atau jasa yang dibeli. Untuk setiap item isi terpisah:
@@ -132,7 +142,7 @@ class AiRepository(private val apiService: GroqApiService) {
             7. suggested_category harus sama persis dengan salah satu dari [$expenseCategories], atau null.
             8. date diambil dari struk dengan format YYYY-MM-DD, atau null jika tidak ada.
 
-            Jawab HANYA dengan JSON dengan key persis berikut:
+            Jawab HANYA dengan JSON ringkas dalam satu baris (tanpa spasi atau baris baru tambahan) dengan key persis berikut:
             {
               "merchant_name": string atau null,
               "date": "YYYY-MM-DD" atau null,
@@ -146,7 +156,7 @@ class AiRepository(private val apiService: GroqApiService) {
               "rounding": angka atau null,
               "total_amount": angka atau null
             }
-        """.trimIndent()
+        """.trimIndent().replace("{{TWO_LINE_HINT}}", twoLineHint)
     }
 
     suspend fun parseVoiceText(

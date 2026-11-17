@@ -62,7 +62,7 @@ object ReceiptChecker {
         var rounding = raw.rounding
 
         val goods = mutableListOf<RawReceiptItem>()
-        for (item in raw.items) {
+        for (item in mergeQuantityLines(raw.items)) {
             val key = item.name.uppercase().trimStart { !it.isLetterOrDigit() }
             val amount = item.lineTotal ?: item.unitPrice
             when {
@@ -108,6 +108,40 @@ object ReceiptChecker {
             receiptTotal = total,
             spreadAdjustments = spread
         )
+    }
+
+    /**
+     * Baris yang isinya hanya jumlah dan satuan, misalnya "2 PCSX", "1 RTGx", "PCS X", "RTG".
+     * Di struk dua baris, baris ini berisi harga untuk nama barang di atasnya.
+     */
+    private val quantityLine = Regex(
+        """^\d*\s*(PCS|PC|RTG|RTGS|BKS|BH|BUAH|BTL|BOTOL|KG|GR|LSN|DUS|BOX|PAK|PACK|PCK|SCT|SACHET|KTK|CUP|BJ|BIJI|LBR|ROLL|RL|UNIT|EA|ML|LTR|BAL|IKT|RIM|PSG)?\s*[X×@*]?\s*\d*$""",
+        RegexOption.IGNORE_CASE
+    )
+
+    internal fun isQuantityLine(name: String): Boolean = name.isNotBlank() && quantityLine.matches(name.trim())
+
+    /**
+     * Struk dua baris (nama di atas, "2 PCS X 27.500 55.000" di bawah) kadang dibaca AI sebagai dua item:
+     * nama tanpa harga, lalu item bernama "PCSX" yang berisi harganya. Gabungkan keduanya menjadi satu item
+     * dengan nama barang yang benar. Hanya dilakukan bila item di atasnya memang belum punya harga.
+     */
+    internal fun mergeQuantityLines(items: List<RawReceiptItem>): List<RawReceiptItem> {
+        val merged = mutableListOf<RawReceiptItem>()
+        for (item in items) {
+            val previous = merged.lastOrNull()
+            val previousHasNoPrice = previous != null && previous.unitPrice == null && previous.lineTotal == null &&
+                !isQuantityLine(previous.name)
+            if (isQuantityLine(item.name) && previousHasNoPrice) {
+                merged[merged.lastIndex] = item.copy(
+                    name = previous!!.name,
+                    suggestedCategory = previous.suggestedCategory ?: item.suggestedCategory
+                )
+            } else {
+                merged.add(item)
+            }
+        }
+        return merged
     }
 
     /** Bandingkan jumlah item dengan TOTAL struk. Dipanggil ulang setiap kali pengguna mengubah item. */

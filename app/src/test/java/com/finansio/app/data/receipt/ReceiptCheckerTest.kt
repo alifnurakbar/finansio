@@ -52,6 +52,49 @@ class ReceiptCheckerTest {
         assertEquals(TotalCheck.Match, ReceiptChecker.compare(checked.items.sumOf { it.lineTotal }, checked.receiptTotal))
     }
 
+    /**
+     * Jawaban AI asli dari scan struk Toko Abeng di HP (17-11-2026). Struk ini mencetak tiap barang dalam
+     * dua baris, dan AI menjadikan baris jumlah ("PCSX", "RTGx", ...) sebagai item tersendiri.
+     */
+    @Test
+    fun `struk Toko Abeng dua baris digabung menjadi lima barang dengan TOTAL 266200`() {
+        val json = """
+            {"merchant_name":"TOKO ABENG","date":"2026-09-29","items":[
+            {"name":"TOTOLE 200G","quantity":1,"unit_price":null,"line_total":null,"suggested_category":"Makanan"},
+            {"name":"PCSX","quantity":2,"unit_price":27500,"line_total":55000,"suggested_category":"Makanan"},
+            {"name":"GOOD DAY CAPPUCINO RTG","quantity":1,"unit_price":null,"line_total":null,"suggested_category":"Makanan"},
+            {"name":"RTGx","quantity":1,"unit_price":21000,"line_total":21000,"suggested_category":"Makanan"},
+            {"name":"MAXTEA TARIY","quantity":1,"unit_price":null,"line_total":null,"suggested_category":"Makanan"},
+            {"name":"RTG","quantity":2,"unit_price":23500,"line_total":47000,"suggested_category":"Makanan"},
+            {"name":"MAMA LEMON 610G","quantity":1,"unit_price":null,"line_total":null,"suggested_category":"Makanan"},
+            {"name":"PCS X","quantity":4,"unit_price":8000,"line_total":32000,"suggested_category":"Makanan"},
+            {"name":"MUANTEB 1KG","quantity":1,"unit_price":null,"line_total":null,"suggested_category":"Makanan"},
+            {"name":"PCS X","quantity":4,"unit_price":27800,"line_total":111200,"suggested_category":"Makanan"}],
+            "subtotal":null,"tax":null,"service_charge":null,"discount":null,"rounding":null,"total_amount":266200}
+        """.trimIndent()
+
+        val checked = ReceiptChecker.check(ReceiptJson.parse(json))
+
+        assertEquals(
+            listOf("TOTOLE 200G", "GOOD DAY CAPPUCINO RTG", "MAXTEA TARIY", "MAMA LEMON 610G", "MUANTEB 1KG"),
+            checked.items.map { it.name }
+        )
+        assertEquals(listOf(2, 1, 2, 4, 4), checked.items.map { it.quantity })
+        assertEquals(listOf(27_500L, 21_000L, 23_500L, 8_000L, 27_800L), checked.items.map { it.unitPrice })
+        assertTrue(checked.items.none { it.priceMissing })
+        assertEquals(TotalCheck.Match, ReceiptChecker.compare(checked.items.sumOf { it.lineTotal }, checked.receiptTotal))
+    }
+
+    @Test
+    fun `baris jumlah dan satuan dikenali, nama barang tidak`() {
+        listOf("PCSX", "2 PCSX", "1 RTGx", "RTG", "2RTG", "PCS X", "4 PCS  X", "X").forEach {
+            assertTrue(it, ReceiptChecker.isQuantityLine(it))
+        }
+        listOf("MUANTEB 1KG", "TOTOLE 200G", "GOOD DAY CAPPUCINO RTG", "KOPI").forEach {
+            assertTrue(it, !ReceiptChecker.isQuantityLine(it))
+        }
+    }
+
     @Test
     fun `subtotal yang ditulis sebagai harga satuan tidak menjadi dobel`() {
         val fixed = ReceiptChecker.fixLine(item("KOPI", 2, 27_500, 27_500))

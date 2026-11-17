@@ -26,7 +26,10 @@ data class GroqVisionChatRequest(
     @SerializedName("messages") val messages: List<Any>,
     @SerializedName("response_format") val responseFormat: GroqResponseFormat? = GroqResponseFormat(),
     @SerializedName("temperature") val temperature: Double? = 0.1,
-    @SerializedName("max_tokens") val maxTokens: Int? = 4096
+    // Batas kuota gratis Groq untuk model vision: 1000 token output per menit. Dengan max_tokens besar,
+    // Groq menolak permintaan (HTTP 429 "Request too large ... OTPM") sebelum diproses.
+    // 900 token cukup untuk sekitar 15 item JSON ringkas; struk lebih panjang jatuh ke model teks.
+    @SerializedName("max_tokens") val maxTokens: Int? = 900
 )
 
 data class GroqVisionMessage(
