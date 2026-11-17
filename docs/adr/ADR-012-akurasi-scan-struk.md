@@ -36,6 +36,12 @@ AI diminta mengisi `unit_price`, `quantity`, dan `line_total` secara terpisah, s
 ### 5. Layar hasil scan menunjukkan pengecekan TOTAL
 Di atas tombol Simpan tampil "✓ Cocok dengan TOTAL struk", atau besar selisihnya bila tidak cocok. Pengecekan dihitung ulang setiap kali pengguna mengubah atau menghapus item. **Angka tidak pernah diakali supaya cocok**; pengguna yang mengoreksi item yang salah.
 
+## Pembaruan setelah uji di HP (2026-11-17)
+Uji pertama di HP (struk Toko Abeng asli) menemukan dua masalah:
+
+1. **Model vision ditolak Groq (HTTP 429).** Kuota gratis `qwen/qwen3.8-27b` adalah 1000 token output dan 7000 token input per menit. Dengan `max_tokens` 4096, Groq memperkirakan output terlalu besar dan menolak permintaan sebelum diproses, sehingga scan selalu jatuh ke model teks. `max_tokens` untuk model vision diturunkan ke 900 dan AI diminta menjawab JSON ringkas. Karena kuota input, kira-kira hanya satu scan foto per menit; scan berikutnya dalam menit yang sama memakai model teks.
+2. **Struk dua baris.** Struk Toko Abeng mencetak nama barang di satu baris, lalu `2 PCSX 27.500 55.000` di baris berikutnya. Teks OCR per baris sudah benar, tetapi model teks menjadikan baris jumlah ("PCSX", "RTGx") sebagai item tersendiri dan nama barangnya tanpa harga. Perbaikannya: prompt menjelaskan format dua baris dengan contoh, dan `ReceiptChecker` menggabungkan baris jumlah ke nama barang di atasnya bila nama itu belum punya harga. Dengan teks OCR asli dari HP, model teks menghasilkan 5 item cocok dengan TOTAL Rp 266.200 pada 3 dari 3 percobaan.
+
 ## Alternatif yang dipertimbangkan
 - **Hanya memperbaiki prompt dan susunan OCR, tanpa foto.** Lebih murah dan tidak memakai kuota gambar, tetapi tetap bergantung pada OCR yang bisa salah baca angka. Tetap dipakai sebagai jalur cadangan.
 - **Parser aturan (regex) tanpa LLM.** Ditolak dengan alasan yang sama seperti ADR-002: format struk Indonesia terlalu beragam.
