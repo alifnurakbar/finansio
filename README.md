@@ -192,6 +192,7 @@ Pengaturan ringan (nama, jam pengingat, status kunci, status peringatan anggaran
   - **Chat AI & Insight**: ringkasan angka (total per bulan dan per kategori), status anggaran, serta transaksi bulan ini berupa tanggal, jenis, kategori, dan nominal. **Nama pengguna dan catatan transaksi tidak dikirim.**
   - **Peringatan anggaran**: nama kategori, nominal terpakai, batas, dan sisa hari.
 - Riwayat Chat AI **tidak disimpan** dan hilang saat halaman chat ditutup.
+- Isi permintaan ke Groq (termasuk foto struk) hanya dicatat ke logcat pada build **debug**. APK release tidak mencatatnya.
 - API key Groq disimpan di `local.properties` (tidak ikut ke Git). Saat build, nilainya ditulis otomatis ke `GroqSecrets.kt`, yang juga masuk `.gitignore`.
 - Kunci aplikasi memakai `BiometricPrompt` (sidik jari atau kunci layar HP). Aplikasi tidak menyimpan data biometrik apa pun.
 
