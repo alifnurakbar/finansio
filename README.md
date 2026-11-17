@@ -22,7 +22,7 @@ Pengembangan lanjutan, penyesuaian, dan penelitian untuk skripsi dilakukan oleh 
 
 APK siap pasang tersedia di halaman **[Releases](https://github.com/alifnurakbar/finansio/releases/latest)**.
 
-1. Unduh file `Finansio-v1.0.1.apk` di HP Android (minimal Android 7.0).
+1. Unduh file `Finansio-v1.0.2.apk` di HP Android (minimal Android 7.0).
 2. Buka file tersebut. Jika diminta, izinkan **"Instal aplikasi tidak dikenal"** untuk browser atau file manager yang dipakai.
 3. Tekan **Instal**, lalu buka Finansio.
 
