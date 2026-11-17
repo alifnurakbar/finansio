@@ -20,25 +20,29 @@ class GroqAuthInterceptor(private val apiKey: String) : Interceptor {
 }
 
 object RetrofitClient {
-    private val authInterceptor = GroqAuthInterceptor(GroqApiConstants.API_KEY)
-    
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
-        redactHeader("Authorization")
+
+    /**
+     * [httpLogging] mencatat isi lengkap permintaan dan jawaban Groq ke logcat. Isinya bisa memuat
+     * foto struk, teks struk, dan ringkasan keuangan pengguna, jadi hanya boleh aktif di build debug.
+     */
+    fun createGroqApiService(httpLogging: Boolean): GroqApiService {
+        val builder = OkHttpClient.Builder()
+            .addInterceptor(GroqAuthInterceptor(GroqApiConstants.API_KEY))
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+        if (httpLogging) {
+            builder.addInterceptor(
+                HttpLoggingInterceptor().apply {
+                    level = HttpLoggingInterceptor.Level.BODY
+                    redactHeader("Authorization")
+                }
+            )
+        }
+        return Retrofit.Builder()
+            .baseUrl(GroqApiConstants.BASE_URL)
+            .client(builder.build())
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(GroqApiService::class.java)
     }
-
-    private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(authInterceptor)
-        .addInterceptor(loggingInterceptor)
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .build()
-
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(GroqApiConstants.BASE_URL)
-        .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-
-    val groqApiService: GroqApiService = retrofit.create(GroqApiService::class.java)
 }
